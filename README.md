@@ -23,5 +23,5 @@ The entry point for the emulator is `0x0` so make sure your code starts at that 
 first write your risc-v `.asm` file, then compile it using the riscv toolchain:
 
 ```bash
-riscv64-elf-as <INPUT_FILE>.asm -o <OUTPUT_FILE>.out -march=rv32im
+riscv64-elf-as <INPUT_FILE>.asm -o <OUTPUT_FILE>.bin -march=rv32im
 ```
