@@ -81,7 +81,9 @@ impl Decode32BitInstruction for Ri32imInstruction {
                 // convert to i32 so that our shift operations are sign extended, and we're explicity okay with the possible wrap
                 #[allow(clippy::cast_possible_wrap)]
                 let machine_code: i32 = machine_code as i32;
-                let imm: i32 = (machine_code >> 20) & 0xFFFF;
+                let mut imm: i32 = 
+                    /* extract the lowest 12 bits of the immediate from the machine code */
+                    (machine_code >> 20) & 0xFFFF;
 
                 let operation = match (opcode, funct3, imm) {
                     // memory load instructions
@@ -122,6 +124,11 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     _ => bail!("Unknown I-type instruction"),
                 };
 
+                // if the instruction is not one of the unsigned instructions, sign extend the immediate
+                if !matches!(operation, ITypeOperation::Lbu | ITypeOperation::Lhu | ITypeOperation::Sltiu) {
+                    imm = imm << 20 >> 20;
+                }
+
                 Ok(Self::IType {
                     operation,
                     rd,
@@ -135,8 +142,12 @@ impl Decode32BitInstruction for Ri32imInstruction {
                 // convert to i32 so that our shift operations are sign extended, and we're explicity okay with the possible wrap
                 #[allow(clippy::cast_possible_wrap)]
                 let machine_code: i32 = machine_code as i32;
+                // only the lower 12 bits of the immediate are given, so we need to sign extend it to 32 bits
                 let imm: i32 =
-                    ((machine_code >> 7) & 0b11111) | ((machine_code >> 20) & 0b1111_1110_0000);
+                    /* extract the lowest 12 bits of the immediate from the machine code */
+                     (((machine_code >> 7) & 0b11111) | ((machine_code >> 20) & 0b1111_1110_0000)) 
+                    /* sign extend the immediate */ 
+                    << 20 >> 20;
 
                 let operation = match funct3 {
                     // memory store instructions
@@ -160,10 +171,14 @@ impl Decode32BitInstruction for Ri32imInstruction {
                 // convert to i32 so that our shift operations are sign extended, and we're explicity okay with the possible wrap
                 #[allow(clippy::cast_possible_wrap)]
                 let machine_code: i32 = machine_code as i32;
-                let imm: i32 = (machine_code >> 31) << 12// 12th bit
+                let imm: i32 = 
+                    /* extract the lowest 12 bits of the immediate from the machine code */
+                    (machine_code >> 31) << 12// 12th bit
                     | ((machine_code << 4) & 0b1000_0000_0000)// 11th bit
                     | ((machine_code >> 20) & 0b111_1110_0000)// 10th:5th bits
-                    | ((machine_code >> 7) & 0b1_1110); // 4th:1st bits, 0th bit is always 0
+                    | ((machine_code >> 7) & 0b11110) // 4th:1st bits, 0th bit is always 0
+                    /* sign extend the immediate */
+                    << 19 >> 19; // 19 because we know the last bit is 0 (and we want to keep it that way)
 
                 let operation = match funct3 {
                     0b000 => SBTypeOperation::Beq,
@@ -264,7 +279,7 @@ mod tests {
                 rs1: 4,
                 rs2: 3,
                 funct3: 0b000,
-                imm: 0xFF0, // -16
+                imm: -16,
             }
         );
         Ok(())
