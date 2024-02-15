@@ -8,6 +8,8 @@ Accepts and runs RISC-V binary files in the ELF format.
 
 only supports the `.text` and `.data` sections
 
+doesn't support compressed binaries
+
 ## requirements
 
 besides the obvious, you need to have the riscv toolchain installed. You can use pacman to install it:
@@ -24,4 +26,10 @@ first write your risc-v `.asm` file, then compile it using the riscv toolchain:
 
 ```bash
 riscv64-elf-as <INPUT_FILE>.asm -o <OUTPUT_FILE>.bin -march=rv32im
+```
+
+you can use the `riscv64-elf-objdump` tool to see the contents of the file:
+
+```bash
+riscv64-elf-objdump <OUTPUT_FILE>.bin -d
 ```
