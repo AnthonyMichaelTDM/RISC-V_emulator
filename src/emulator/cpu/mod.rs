@@ -1,10 +1,10 @@
 pub mod memory;
 pub mod registers;
 
-use memory::{MemoryBus, STACK_CEILING};
+use memory::MemoryBus;
 use registers::{RegisterFile32Bit, RegisterMapping};
 
-use self::memory::{HEAP_BASE, TEXT_BASE};
+use self::memory::TEXT_BASE;
 
 /// the number of registers in the RISC-V ISA
 pub const REGISTERS_COUNT: u8 = 32;
@@ -25,27 +25,39 @@ pub struct Cpu32Bit {
     pub memory: MemoryBus,
 }
 
+impl Default for Cpu32Bit {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Cpu32Bit {
+    /// Create a new CPU with the default state.
     #[must_use]
-    pub fn initialize(text: Vec<u8>, data: Vec<u8>, entrypoint: u32) -> Self {
-        // initialize the register file
-        let mut registers = RegisterFile32Bit::new();
-
-        // set the stack pointer to the top of the stack (highest address in the stack region)
-        registers.write(RegisterMapping::Sp, STACK_CEILING);
-        // set the return address to the entrypoint
-        registers.write(RegisterMapping::Ra, entrypoint + TEXT_BASE);
-        // set the global pointer to the start of the heap
-        registers.write(RegisterMapping::Gp, HEAP_BASE);
-
-        let mut memory = MemoryBus::new();
-        memory.initialize_dram(&data);
-        memory.initialize_text(&text);
-
+    pub fn new() -> Self {
         Self {
-            registers,
-            pc: entrypoint,
-            memory,
+            registers: RegisterFile32Bit::new(),
+            pc: 0,
+            memory: MemoryBus::new(),
         }
+    }
+
+    /// Load the given program into the CPU's memory and set the program counter to the given entrypoint.
+    ///
+    /// also resets the CPU's registers and memory to their default state
+    pub fn load(&mut self, text: &[u8], data: &[u8], entrypoint: u32) {
+        // reset the program counter
+        self.pc = entrypoint;
+
+        // reset registers
+        self.registers.reset();
+        // set the return address to the entrypoint
+        self.registers
+            .write(RegisterMapping::Ra, entrypoint + TEXT_BASE);
+
+        // reset memory
+        self.memory.clear();
+        self.memory.initialize_dram(data);
+        self.memory.initialize_text(text);
     }
 }

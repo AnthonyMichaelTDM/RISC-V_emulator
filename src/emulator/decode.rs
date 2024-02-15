@@ -6,10 +6,11 @@ use crate::instruction_set_definition::{
         ITypeOperation, RTypeOperation, SBTypeOperation, STypeOperation, UJTypeOperation,
         UTypeOperation,
     },
-    Instruction,
+    Ri32imInstruction,
 };
 
-pub trait Decode {
+#[allow(clippy::module_name_repetitions)]
+pub trait Decode32BitInstruction {
     /// Decode a 32-bit machine code into an instruction
     ///
     /// # Arguments
@@ -23,22 +24,9 @@ pub trait Decode {
     fn from_machine_code(machine_code: u32) -> Result<Self>
     where
         Self: Sized;
-
-    /// Decode a slice of bytes into an instruction
-    fn from_bytes(bytes: &[u8]) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        if bytes.len() != 4 {
-            bail!("Invalid instruction length: {}", bytes.len());
-        }
-
-        let machine_code = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-        Self::from_machine_code(machine_code)
-    }
 }
 
-impl Decode for Instruction {
+impl Decode32BitInstruction for Ri32imInstruction {
     #[allow(clippy::too_many_lines)]
     fn from_machine_code(machine_code: u32) -> Result<Self> {
         // extract the opcode
@@ -235,12 +223,10 @@ mod tests {
     #[test]
     fn test_add() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_0011_0010_0000_0010_1011_0011;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::RType {
+            Ri32imInstruction::RType {
                 operation: RTypeOperation::Add,
                 rs1: 4,
                 rs2: 3,
@@ -254,12 +240,10 @@ mod tests {
     #[test]
     fn test_andi() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_1010_0110_0111_0110_1001_0011;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::IType {
+            Ri32imInstruction::IType {
                 operation: ITypeOperation::Andi,
                 rs1: 12,
                 rd: 13,
@@ -272,12 +256,10 @@ mod tests {
     #[test]
     fn test_sb() -> Result<()> {
         let machine_code: u32 = 0b1111_1110_0011_0010_0000_1000_0010_0011;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::SType {
+            Ri32imInstruction::SType {
                 operation: STypeOperation::Sb,
                 rs1: 4,
                 rs2: 3,
@@ -290,12 +272,10 @@ mod tests {
     #[test]
     fn test_bne() -> Result<()> {
         let machine_code: u32 = 0b0000_0001_1110_0010_1001_0011_0110_0011;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::SBType {
+            Ri32imInstruction::SBType {
                 operation: SBTypeOperation::Bne,
                 rs1: 5,
                 rs2: 30,
@@ -308,12 +288,10 @@ mod tests {
     #[test]
     fn test_jal() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_1010_0000_0000_0000_1110_1111;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::UJType {
+            Ri32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
                 rd: 1,
                 imm: 0xA, // 10
@@ -324,12 +302,10 @@ mod tests {
     #[test]
     fn test_jal_2() -> Result<()> {
         let machine_code: u32 = 0b1000_0000_1011_0000_1000_0000_1110_1111;
-        let machine_code_bytes = machine_code.to_le_bytes();
-        let instruction = Instruction::from_machine_code(machine_code)?;
-        assert_eq!(instruction, Instruction::from_bytes(&machine_code_bytes)?);
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Instruction::UJType {
+            Ri32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
                 rd: 1,
                 imm: 0b1_0000_1000_1000_0000_1010,

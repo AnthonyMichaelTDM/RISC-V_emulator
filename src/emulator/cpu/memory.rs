@@ -42,7 +42,7 @@ impl MemoryRegion {
             data.len() <= self.size as usize,
             "Data is too large for the memory region"
         );
-        self.data[..data.len()].copy_from_slice(&data);
+        self.data[..data.len()].copy_from_slice(data);
     }
 
     /// Load `size`-bit data from the memory.
@@ -77,7 +77,7 @@ impl MemoryRegion {
     /// Write a byte to the memory.
     fn write8(&mut self, addr: u32, val: u32) {
         let index = (addr - self.base) as usize;
-        self.data[index] = val as u8;
+        self.data[index] = (val & 0xff) as u8;
     }
 
     /// Write 2 bytes to the memory with little endian.
@@ -119,9 +119,11 @@ impl MemoryRegion {
 }
 
 /// The system bus.
+#[allow(clippy::module_name_repetitions)]
 pub struct MemoryBus {
     dram: MemoryRegion,
     text: MemoryRegion,
+    code_size_bytes: usize,
 }
 
 impl Default for MemoryBus {
@@ -137,29 +139,56 @@ impl MemoryBus {
         Self {
             dram: MemoryRegion::new(DRAM_BASE, DRAM_END - DRAM_BASE),
             text: MemoryRegion::new(TEXT_BASE, TEXT_SIZE),
+            code_size_bytes: 0,
         }
+    }
+
+    /// Clear the memory (revert to the initial state).
+    pub fn clear(&mut self) {
+        self.dram = MemoryRegion::new(DRAM_BASE, DRAM_END - DRAM_BASE);
+        self.text = MemoryRegion::new(TEXT_BASE, TEXT_SIZE);
+        self.code_size_bytes = 0;
     }
 
     /// Set the binary data to the memory.
     pub fn initialize_dram(&mut self, data: &[u8]) {
-        self.dram.initialize(&data);
+        self.dram.initialize(data);
     }
 
     /// Set the binary code to the memory.
     pub fn initialize_text(&mut self, data: &[u8]) {
-        self.text.initialize(&data);
+        self.code_size_bytes = data.len();
+        self.text.initialize(data);
     }
 
     /// Load a `size`-bit data from the device that connects to the system bus.
-    pub fn read(&mut self, addr: u32, size: Size) -> Result<u32> {
+    ///
+    /// This method is used to read from the memory.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the address is out of bounds.
+    pub fn read(&self, addr: u32, size: Size) -> Result<u32> {
         match addr {
-            TEXT_BASE..=TEXT_END => self.text.read(addr, size),
+            TEXT_BASE..=TEXT_END => {
+                if addr as usize + size as usize > TEXT_BASE as usize + self.code_size_bytes {
+                    bail!("Address {:08x} is out of bounds of text segment", addr);
+                }
+                self.text.read(addr, size)
+            }
             DRAM_BASE..=DRAM_END => self.dram.read(addr, size),
-            _ => bail!("Unkown memory region addressed"),
+            _ => bail!("Unkown or Out-Of-Bounds memory region addressed"),
         }
     }
 
     /// Store a `size`-bit data to the device that connects to the system bus.
+    ///
+    /// This method is used to write to the memory.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the address is out of bounds.
+    /// or if the address is in the text section. (self modifying code is not supported)
     pub fn write(&mut self, addr: u32, value: u32, size: Size) -> Result<()> {
         match addr {
             TEXT_BASE..=TEXT_END => bail!("Self modifying code is not supported"),

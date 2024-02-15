@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         (None, None)
     };
 
-    let entrypoint = file.ehdr.e_entry;
+    let entrypoint = u32::try_from(file.ehdr.e_entry)?; // the entrypoint should fit in a u32, if it doesn't, the file is invalid
     println!("Entrypoint: 0x{entrypoint:x}");
 
     let text_header = file.section_header_by_name(".text")?;
@@ -52,11 +52,8 @@ fn main() -> Result<()> {
         "Text section length is not a multiple of 4, this is not a valid RISC-V binary"
     );
 
-    let _cpu: Cpu32Bit = Cpu32Bit::initialize(
-        text_section.to_vec(),
-        data_section.unwrap_or_default().to_vec(),
-        entrypoint as u32,
-    );
+    let mut cpu: Cpu32Bit = Cpu32Bit::new();
+    cpu.load(text_section, data_section.unwrap_or_default(), entrypoint);
 
     Ok(())
     // cpu.run()

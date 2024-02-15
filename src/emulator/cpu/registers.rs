@@ -2,7 +2,10 @@ use std::fmt;
 
 use anyhow::bail;
 
-use super::REGISTERS_COUNT;
+use super::{
+    memory::{STACK_CEILING, TEXT_BASE},
+    REGISTERS_COUNT,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
 #[repr(u8)]
@@ -54,7 +57,7 @@ impl TryFrom<u8> for RegisterMapping {
         // 1. the value is checked to be within the range of the enum
         // 2. the enum is repr(u8), so the memory layout is the same as u8
         // 3. we explicityly define the src and dst generics to ensure that future changes to the enum's memory size are caught at compile time
-        Ok(unsafe { std::mem::transmute::<u8, RegisterMapping>(value) })
+        Ok(unsafe { std::mem::transmute::<u8, Self>(value) })
     }
 }
 
@@ -66,9 +69,23 @@ pub struct RegisterFile32Bit {
 impl RegisterFile32Bit {
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            registers: [0; REGISTERS_COUNT as usize],
+        let mut registers = [0; REGISTERS_COUNT as usize];
+
+        // set the stack pointer to the top of the stack (highest address in the stack region)
+        registers[RegisterMapping::Sp as usize] = STACK_CEILING;
+        // set the return address to the start of the text region, this will be overwritten by
+        // structs using this register file (e.g. the CPU) upon loading a program
+        registers[RegisterMapping::Ra as usize] = TEXT_BASE;
+
+        Self { registers }
+    }
+
+    pub fn reset(&mut self) {
+        for i in 0..REGISTERS_COUNT {
+            self.registers[i as usize] = 0;
         }
+        self.registers[RegisterMapping::Sp as usize] = STACK_CEILING;
+        self.registers[RegisterMapping::Ra as usize] = TEXT_BASE;
     }
 
     #[must_use]
@@ -91,23 +108,19 @@ impl fmt::Display for RegisterFile32Bit {
         let mut output = String::new();
         for i in (0..REGISTERS_COUNT).step_by(4) {
             output = format!(
-                "{}\n{}",
-                output,
-                format!(
-                    "x{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x}",
-                    i,
-                    abi[i as usize],
-                    self.read(RegisterMapping::try_from(i).expect("Invalid register number")),
-                    i + 1,
-                    abi[i as usize+ 1],
-                    self.read(RegisterMapping::try_from(i + 1).expect("Invalid register number")),
-                    i + 2,
-                    abi[i as usize + 2],
-                    self.read(RegisterMapping::try_from(i + 2).expect("Invalid register number")),
-                    i + 3,
-                    abi[i as usize + 3],
-                    self.read(RegisterMapping::try_from(i + 3).expect("Invalid register number")),
-                )
+                "{output}\nx{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x}",
+                i,
+                abi[i as usize],
+                self.read(RegisterMapping::try_from(i).expect("Invalid register number")),
+                i + 1,
+                abi[i as usize+ 1],
+                self.read(RegisterMapping::try_from(i + 1).expect("Invalid register number")),
+                i + 2,
+                abi[i as usize + 2],
+                self.read(RegisterMapping::try_from(i + 2).expect("Invalid register number")),
+                i + 3,
+                abi[i as usize + 3],
+                self.read(RegisterMapping::try_from(i + 3).expect("Invalid register number")),
             );
         }
         write!(f, "{output}")

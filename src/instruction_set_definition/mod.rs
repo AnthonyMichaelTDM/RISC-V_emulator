@@ -8,7 +8,7 @@ use self::operations::{
 pub mod operations;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]
-pub enum Instruction {
+pub enum Ri32imInstruction {
     #[display(
         fmt = "Instruction Type: R, Operation: {operation}, Rs1: x{rs1}, Rs2: x{rs2}, Rd: x{rd}, Funct3: {funct3}, Funct7: {funct7}"
     )]
