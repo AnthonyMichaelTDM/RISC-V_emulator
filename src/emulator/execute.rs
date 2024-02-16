@@ -97,7 +97,13 @@ impl Execute32BitInstruction for Cpu32Bit {
                 imm,
             ),
             Self::InstructionSet::UJType { operation, rd, imm } => {
-                execute_ujtype_instruction(&mut self.registers, operation, rd, imm)
+                return execute_ujtype_instruction(
+                    &mut self.pc,
+                    &mut self.registers,
+                    operation,
+                    rd,
+                    imm,
+                )
             }
             Self::InstructionSet::UType { operation, rd, imm } => {
                 execute_utype_instruction(&self.pc, &mut self.registers, operation, rd, imm)
@@ -159,7 +165,7 @@ fn execute_itype_instruction(
 }
 
 fn process_ecall(_registers: &mut RegisterFile32Bit, _memory: &MemoryBus) -> Result<()> {
-    todo!()
+    todo!() // Ok(())
 }
 
 fn execute_rtype_instruction(
@@ -242,12 +248,19 @@ fn execute_sbtype_instruction(
 }
 
 fn execute_ujtype_instruction(
-    _registers: &mut RegisterFile32Bit,
-    _operation: UJTypeOperation,
-    _rd: RegisterMapping,
-    _imm: u32,
+    pc: &mut u32,
+    regs: &mut RegisterFile32Bit,
+    operation: UJTypeOperation,
+    rd: RegisterMapping,
+    offset: u32,
 ) -> Result<()> {
-    todo!()
+    match operation {
+        UJTypeOperation::Jal => {
+            regs[rd] = *pc + 4;
+            *pc = pc.wrapping_add_signed(((offset as i32) << 12) >> 12);
+        }
+    }
+    Ok(())
 }
 
 fn execute_utype_instruction(
