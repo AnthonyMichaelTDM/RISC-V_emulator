@@ -40,7 +40,7 @@ impl Cpu32Bit {
     /// Load the given program into the CPU's memory and set the program counter to the given entrypoint.
     ///
     /// also resets the CPU's registers and memory to their default state
-    pub fn new(text: &[u8], data: &[u8], entrypoint: u32) -> Self {
+    pub fn new(text: &[u8], data: &[u8], entrypoint: u32, gp: Option<u32>) -> Self {
         // init registers
         let mut registers = RegisterFile32Bit::new();
         // set the stack pointer to the top of the stack (highest address in the stack region)
@@ -48,6 +48,9 @@ impl Cpu32Bit {
         // set the return address to the start of the text region, this will be overwritten by
         // structs using this register file (e.g. the CPU) upon loading a program
         registers[RegisterMapping::Ra] = entrypoint;
+        if let Some(gp) = gp {
+            registers[RegisterMapping::Gp] = gp;
+        }
 
         Self {
             registers,

@@ -53,8 +53,24 @@ fn main() -> Result<()> {
         "Text section length is not a multiple of 4, this is not a valid RISC-V binary"
     );
 
-    let mut cpu: Cpu32Bit =
-        Cpu32Bit::new(text_section, data_section.unwrap_or_default(), entrypoint);
+    // extract `__global_pointer$` from the ELF file, it's a symbol not a section
+    let gp = file
+        .symbol_table()?
+        .map(|table| {
+            table
+                .0
+                .iter()
+                .find(|symbol| table.1.get(symbol.st_name as usize).unwrap() == "__global_pointer$")
+                .map(|symbol| symbol.st_value as u32)
+        })
+        .flatten();
+
+    let mut cpu: Cpu32Bit = Cpu32Bit::new(
+        text_section,
+        data_section.unwrap_or_default(),
+        entrypoint,
+        gp,
+    );
 
     if args.debug {
         // pause before executing the first instruction
