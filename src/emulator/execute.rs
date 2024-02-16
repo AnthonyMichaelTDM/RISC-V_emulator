@@ -296,7 +296,9 @@ fn execute_ujtype_instruction(
 ) -> Result<()> {
     match operation {
         UJTypeOperation::Jal => {
-            regs[rd] = *pc + 4;
+            if rd != RegisterMapping::Zero {
+                regs[rd] = *pc + 4;
+            }
             *pc = pc.wrapping_add_signed(((offset as i32) << 12) >> 12);
         }
     }

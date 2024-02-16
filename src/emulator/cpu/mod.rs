@@ -82,8 +82,10 @@ impl Cpu32Bit {
         // fetch and decode the instruction
         let instruction = self.memory.fetch_and_decode(self.pc)?;
 
+        debugger::clear_screen();
+        println!("Program Output:\n{}", self.output);
+        println!();
         if self.debug {
-            debugger::clear_screen();
             debugger::print_screen(self);
             println!();
             // pause execution until user input is received
@@ -114,7 +116,6 @@ impl Cpu32Bit {
 
         // execute the instruction, updating the CPU's state as necessary (e.g. updating registers and memory, incrementing the program counter, etc.)
         self.execute(instruction)?;
-        println!("\n Program Output: {}", self.output);
 
         Ok(())
     }
