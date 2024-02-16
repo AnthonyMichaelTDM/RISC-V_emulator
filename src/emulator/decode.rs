@@ -50,20 +50,23 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     // normal arithmetic instructions
                     (0b011_0011, 0b000, 0b000_0000) => RTypeOperation::Add,
                     (0b011_0011, 0b000, 0b010_0000) => RTypeOperation::Sub,
-                    (0b011_0011, 0b001, _) => RTypeOperation::Sll,
-                    (0b011_0011, 0b010, _) => RTypeOperation::Slt,
-                    (0b011_0011, 0b011, _) => RTypeOperation::Sltu,
-                    (0b011_0011, 0b100, _) => RTypeOperation::Xor,
+                    (0b011_0011, 0b001, 0b000_0000) => RTypeOperation::Sll,
+                    (0b011_0011, 0b010, 0b000_0000) => RTypeOperation::Slt,
+                    (0b011_0011, 0b011, 0b000_0000) => RTypeOperation::Sltu,
+                    (0b011_0011, 0b100, 0b000_0000) => RTypeOperation::Xor,
                     (0b011_0011, 0b101, 0b000_0000) => RTypeOperation::Srl,
                     (0b011_0011, 0b101, 0b010_0000) => RTypeOperation::Sra,
-                    (0b011_0011, 0b110, _) => RTypeOperation::Or,
-                    (0b011_0011, 0b111, _) => RTypeOperation::And,
-                    // ...w instructions
-                    (0b011_1011, 0b000, 0b000_0000) => RTypeOperation::Addw,
-                    (0b011_1011, 0b000, 0b010_0000) => RTypeOperation::Subw,
-                    (0b011_1011, 0b001, _) => RTypeOperation::Sllw,
-                    (0b011_1011, 0b101, 0b000_0000) => RTypeOperation::Srlw,
-                    (0b011_1011, 0b101, 0b010_0000) => RTypeOperation::Sraw,
+                    (0b011_0011, 0b110, 0b000_0000) => RTypeOperation::Or,
+                    (0b011_0011, 0b111, 0b000_0000) => RTypeOperation::And,
+                    // M extension instructions
+                    (0b011_0011, 0b000, 0b0000001) => RTypeOperation::Mul,
+                    (0b011_0011, 0b001, 0b0000001) => RTypeOperation::Mulh,
+                    (0b011_0011, 0b010, 0b0000001) => RTypeOperation::Mulhsu,
+                    (0b011_0011, 0b011, 0b0000001) => RTypeOperation::Mulhu,
+                    (0b011_0011, 0b100, 0b0000001) => RTypeOperation::Div,
+                    (0b011_0011, 0b101, 0b0000001) => RTypeOperation::Divu,
+                    (0b011_0011, 0b110, 0b0000001) => RTypeOperation::Rem,
+                    (0b011_0011, 0b111, 0b0000001) => RTypeOperation::Remu,
                     _ => bail!("Unknown R-type instruction"),
                 };
 
@@ -99,28 +102,26 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     (0b001_0011, 0b000, _) => ITypeOperation::Addi,
                     (0b001_0011, 0b111, _) => ITypeOperation::Andi,
                     (0b001_0011, 0b110, _) => ITypeOperation::Ori,
-                    (0b001_0011, 0b001, 0b010_0000) => ITypeOperation::Slli,
-                    (0b001_0011, 0b101, 0b000_0000) => ITypeOperation::Srli,
-                    (0b001_0011, 0b101, 0b010_0000) => ITypeOperation::Srai,
+                    (0b001_0011, 0b001, immediate ) if immediate >> 5 == 0b000_0000 => {
+                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        ITypeOperation::Slli
+                    },
+                    (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b000_0000 => {
+                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        ITypeOperation::Srli
+                    },
+                    (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b010_0000 => {
+                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        ITypeOperation::Srai
+                    },
                     (0b001_0011, 0b010, _) => ITypeOperation::Slti,
                     (0b001_0011, 0b011, _) => ITypeOperation::Sltiu,
                     (0b001_0011, 0b100, _) => ITypeOperation::Xori,
-                    // I-type arithmetic w instructions
-                    (0b001_1011, 0b000, _) => ITypeOperation::Addiw,
-                    (0b001_1011, 0b001, 0b000_0000) => ITypeOperation::Slliw,
-                    (0b001_1011, 0b101, 0b000_0000) => ITypeOperation::Srliw,
-                    (0b001_1011, 0b101, 0b010_0000) => ITypeOperation::Sraiw,
                     // jalr instruction
                     (0b110_0111, 0b000, _) => ITypeOperation::Jalr,
                     // system instructions
                     (0b111_0011, 0b000, 0b0000_0000_0000) => ITypeOperation::Ecall,
                     (0b111_0011, 0b000, 0b0000_0000_0001) => ITypeOperation::Ebreak,
-                    (0b111_0011, 0b001, _) => ITypeOperation::Csrrw,
-                    (0b111_0011, 0b010, _) => ITypeOperation::Csrrs,
-                    (0b111_0011, 0b011, _) => ITypeOperation::Csrrc,
-                    (0b111_0011, 0b101, _) => ITypeOperation::Csrrwi,
-                    (0b111_0011, 0b110, _) => ITypeOperation::Csrrsi,
-                    (0b111_0011, 0b111, _) => ITypeOperation::Csrrci,
                     _ => bail!("Unknown I-type instruction"),
                 };
 

@@ -24,16 +24,23 @@ pub enum RTypeOperation {
     #[display(fmt = "xor")]
     Xor,
     // below are not needed for this project, but included for completeness
-    #[display(fmt = "addw")]
-    Addw,
-    #[display(fmt = "subw")]
-    Subw,
-    #[display(fmt = "sllw")]
-    Sllw,
-    #[display(fmt = "srlw")]
-    Srlw,
-    #[display(fmt = "sraw")]
-    Sraw,
+    // below are the Multiply Extension instructions
+    #[display(fmt = "mul")]
+    Mul,
+    #[display(fmt = "mulh")]
+    Mulh,
+    #[display(fmt = "mulhu")]
+    Mulhu,
+    #[display(fmt = "mulhsu")]
+    Mulhsu,
+    #[display(fmt = "div")]
+    Div,
+    #[display(fmt = "divu")]
+    Divu,
+    #[display(fmt = "rem")]
+    Rem,
+    #[display(fmt = "remu")]
+    Remu,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]
@@ -73,30 +80,10 @@ pub enum ITypeOperation {
     Fence,
     #[display(fmt = "fence.i")]
     FenceI,
-    #[display(fmt = "addiw")]
-    Addiw,
-    #[display(fmt = "slliw")]
-    Slliw,
-    #[display(fmt = "srliw")]
-    Srliw,
-    #[display(fmt = "sraiw")]
-    Sraiw,
     #[display(fmt = "ecall")]
     Ecall,
     #[display(fmt = "ebreak")]
     Ebreak,
-    #[display(fmt = "csrrw")]
-    Csrrw,
-    #[display(fmt = "csrrs")]
-    Csrrs,
-    #[display(fmt = "csrrc")]
-    Csrrc,
-    #[display(fmt = "csrrwi")]
-    Csrrwi,
-    #[display(fmt = "csrrsi")]
-    Csrrsi,
-    #[display(fmt = "csrrci")]
-    Csrrci,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]

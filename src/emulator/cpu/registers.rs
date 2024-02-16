@@ -108,7 +108,7 @@ impl fmt::Display for RegisterFile32Bit {
         let mut output = String::new();
         for i in (0..REGISTERS_COUNT).step_by(4) {
             output = format!(
-                "{output}\nx{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x} x{:02}({})={:>#18x}",
+                "{output}\nx{:02}({})={:#010x} x{:02}({})={:#010x} x{:02}({})={:#010x} x{:02}({})={:#010x}",
                 i,
                 abi[i as usize],
                 self.read(RegisterMapping::try_from(i).expect("Invalid register number")),

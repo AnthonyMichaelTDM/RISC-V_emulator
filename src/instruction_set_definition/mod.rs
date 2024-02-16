@@ -4,13 +4,19 @@ use self::operations::{
     ITypeOperation, RTypeOperation, SBTypeOperation, STypeOperation, UJTypeOperation,
     UTypeOperation,
 };
+#[allow(unused_imports)]
+use crate::emulator::cpu::registers::RegisterMapping;
 
 pub mod operations;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]
 pub enum Ri32imInstruction {
     #[display(
-        fmt = "Operation: {operation}, Rs1: x{rs1}, Rs2: x{rs2}, Rd: x{rd}, Funct3: {funct3}, Funct7: {funct7}, Instruction Type: R"
+        fmt = "{:10} {:<4} {:<4} {:<10} # R-Type:  operation, rd, rs1, rs2",
+        "operation.to_string()",
+        "format!(\"x{rd},\")",
+        "format!(\"x{rs1},\")",
+        "format!(\"x{rs2},\")"
     )]
     RType {
         operation: RTypeOperation,
@@ -21,7 +27,11 @@ pub enum Ri32imInstruction {
         funct7: u8,
     },
     #[display(
-        fmt = "Operation: {operation}, Rs1: x{rs1}, Rd: x{rd}, Immediate: {imm}, Instruction Type: I"
+        fmt = "{:10} {:<4} {:<4} {:#010x} # I-Type:  operation, rd, rs1, imm",
+        "operation.to_string()",
+        "format!(\"x{rd},\")",
+        "format!(\"x{rs1},\")",
+        imm
     )]
     IType {
         operation: ITypeOperation,
@@ -31,7 +41,11 @@ pub enum Ri32imInstruction {
         imm: i32,
     },
     #[display(
-        fmt = "Operation: {operation}, Rs1: x{rs1}, Rs2: x{rs2}, Immediate: {imm}, Instruction Type: S"
+        fmt = "{:10} {:<4} {:<4} {:#010x} # S-Type:  operation, rs2, rs1, imm",
+        "operation.to_string()",
+        "format!(\"x{rs2},\")",
+        "format!(\"x{rs1},\")",
+        imm
     )]
     SType {
         operation: STypeOperation,
@@ -41,7 +55,11 @@ pub enum Ri32imInstruction {
         imm: i32,
     },
     #[display(
-        fmt = "Operation: {operation}, Rs1: x{rs1}, Rs2: x{rs2}, Immediate: {imm}, Instruction Type: SB"
+        fmt = "{:10} {:<4} {:<4} {:#010x} # SB-Type: operation, rs1, rs2, imm",
+        "operation.to_string()",
+        "format!(\"x{rs1},\")",
+        "format!(\"x{rs2},\")",
+        imm
     )]
     SBType {
         operation: SBTypeOperation,
@@ -50,13 +68,23 @@ pub enum Ri32imInstruction {
         rs2: u8,
         imm: i32,
     },
-    #[display(fmt = "Operation: {operation}, Rd: x{rd}, Immediate: {imm}, Instruction Type: UJ")]
+    #[display(
+        fmt = "{:10} {:<9} {:#010x} # UJ-Type: operation, rd, imm",
+        "operation.to_string()",
+        "format!(\"x{rd},\")",
+        imm
+    )]
     UJType {
         operation: UJTypeOperation,
         rd: u8,
         imm: u32,
     },
-    #[display(fmt = "Operation: {operation}, Rd: x{rd}, Immediate: {imm}, Instruction Type: U")]
+    #[display(
+        fmt = "{:10} {:<4}      {:#010x} # U-Type:  operation, rd, imm",
+        "operation.to_string()",
+        "format!(\"x{rd},\")",
+        imm
+    )]
     UType {
         operation: UTypeOperation,
         rd: u8,

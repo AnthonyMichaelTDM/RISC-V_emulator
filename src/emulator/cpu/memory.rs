@@ -175,12 +175,7 @@ impl MemoryBus {
     /// This method will return an error if the address is out of bounds.
     pub fn read(&self, addr: u32, size: Size) -> Result<u32> {
         match addr {
-            TEXT_BASE..=TEXT_END => {
-                if addr as usize + size as usize > TEXT_BASE as usize + self.code_size_bytes {
-                    bail!("Address {:08x} is out of bounds of text segment", addr);
-                }
-                self.text.read(addr, size)
-            }
+            TEXT_BASE..=TEXT_END => self.text.read(addr, size),
             DRAM_BASE..=DRAM_END => self.dram.read(addr, size),
             _ => bail!("Unkown or Out-Of-Bounds memory region addressed"),
         }

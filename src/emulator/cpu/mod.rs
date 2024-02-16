@@ -88,21 +88,21 @@ impl Cpu32Bit {
 impl fmt::Display for Cpu32Bit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "CPU32Bit {{\n")?;
-        write!(f, "    pc: {:#08x},\n", self.pc)?;
+        write!(f, "    pc: {:#010x},\n", self.pc)?;
 
         write!(f, "    context: {{\n")?;
         // print the 4 instructions before the current instruction
         for offset in (1..=4).rev() {
             let addr = self.pc.wrapping_sub(offset * 4);
             if let Ok(instruction) = self.memory.fetch_and_decode(addr) {
-                write!(f, "        {:#08x}: {},\n", addr, instruction)?;
+                write!(f, "        {:#010x}: {},\n", addr, instruction)?;
             } else {
-                write!(f, "        {:#08x}: <invalid instruction>,\n", addr)?;
+                write!(f, "        {:#010x}: <invalid instruction>,\n", addr)?;
             }
         }
         write!(
             f,
-            "   ---> {:#08x}: {},\n",
+            "   ---> {:#010x}: {},\n",
             self.pc,
             if let Ok(instruction) = self.memory.fetch_and_decode(self.pc) {
                 format!("{}", instruction)
@@ -114,9 +114,9 @@ impl fmt::Display for Cpu32Bit {
         for offset in 1..=4 {
             let addr = self.pc.wrapping_add(offset * 4);
             if let Ok(instruction) = self.memory.fetch_and_decode(addr) {
-                write!(f, "        {:#08x}: {},\n", addr, instruction)?;
+                write!(f, "        {:#010x}: {},\n", addr, instruction)?;
             } else {
-                write!(f, "        {:#08x}: <invalid instruction>,\n", addr)?;
+                write!(f, "        {:#010x}: <invalid instruction>,\n", addr)?;
             }
         }
         write!(f, "    }},\n")?;
@@ -124,8 +124,9 @@ impl fmt::Display for Cpu32Bit {
         write!(
             f,
             "    {}\n",
-            format!("{}", self.registers).replace("\n", "\n    ")
+            self.registers.to_string().replace("\n", "\n        ")
         )?;
+        write!(f, "    }},\n")?;
         write!(f, "}}")
     }
 }
