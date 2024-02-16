@@ -2,7 +2,8 @@ pub mod emulator;
 pub mod instruction_set_definition;
 pub mod utils;
 
-use std::path::PathBuf;
+#[allow(unused_imports)]
+use std::{path::PathBuf, str::FromStr as _};
 
 use anyhow::{bail, Result};
 use clap::{command, Parser};
@@ -26,6 +27,10 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     let path = args.input_file;
+    let debug = args.debug;
+
+    // let path = PathBuf::from_str("test_binaries/matrix_mult.bin")?;
+    // let debug = true;
 
     let file_data = std::fs::read(path)?;
     let file = ElfBytes::<AnyEndian>::minimal_parse(file_data.as_slice())?;
@@ -72,7 +77,7 @@ fn main() -> Result<()> {
         gp,
     );
 
-    if args.debug {
+    if debug {
         // pause before executing the first instruction
         cpu.debug = true;
     }

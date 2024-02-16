@@ -132,7 +132,9 @@ fn execute_itype_instruction(
         ITypeOperation::Jalr => {
             let t = *pc + 4;
             *pc = (regs[rs1].wrapping_add(imm as u32) & !1) as u32;
-            regs[rd] = t;
+            if rd != RegisterMapping::Zero {
+                regs[rd] = t;
+            }
         }
         ITypeOperation::Lb => {
             regs[rd] = ((memory.read(regs[rs1].wrapping_add_signed(imm), Size::Byte)? as i32) << 24
@@ -255,32 +257,32 @@ fn execute_sbtype_instruction(
     match operation {
         SBTypeOperation::Beq => {
             if regs[rs1] == regs[rs2] {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
         SBTypeOperation::Bge => {
             if (regs[rs1] as i32) >= (regs[rs2] as i32) {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
         SBTypeOperation::Blt => {
             if (regs[rs1] as i32) < (regs[rs2] as i32) {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
         SBTypeOperation::Bne => {
             if regs[rs1] != regs[rs2] {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
         SBTypeOperation::Bltu => {
             if regs[rs1] < regs[rs2] {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
         SBTypeOperation::Bgeu => {
             if regs[rs1] >= regs[rs2] {
-                *pc = pc.wrapping_add_signed(offset);
+                *pc = pc.wrapping_add_signed(offset - 4);
             }
         }
     }
