@@ -19,6 +19,8 @@ use emulator::cpu::Cpu32Bit;
 struct Args {
     #[clap( help="The input binary", value_name="FILE", value_hint=clap::ValueHint::FilePath, required=true, index=1)]
     input_file: PathBuf,
+    #[clap(short, long, help = "Enable debug mode")]
+    debug: bool,
 }
 
 fn main() -> Result<()> {
@@ -37,7 +39,6 @@ fn main() -> Result<()> {
     };
 
     let entrypoint = u32::try_from(file.ehdr.e_entry)?; // the entrypoint should fit in a u32, if it doesn't, the file is invalid
-    println!("Entrypoint: 0x{entrypoint:x}");
 
     let text_header = file.section_header_by_name(".text")?;
     let (text_section, _text_compression_header) = if let Some(header) = text_header {
@@ -55,6 +56,20 @@ fn main() -> Result<()> {
     let mut cpu: Cpu32Bit = Cpu32Bit::new();
     cpu.load(text_section, data_section.unwrap_or_default(), entrypoint);
 
+    loop {
+        if args.debug {
+            // clear the screen
+            print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+            // print cpu state
+            println!("CPU state before fetching the next instruction:");
+            println!("{}", cpu);
+        }
+
+        if let Err(e) = cpu.step() {
+            eprintln!("Error: {}", e);
+            break;
+        }
+    }
+
     Ok(())
-    // cpu.run()
 }
