@@ -34,11 +34,8 @@ pub trait Execute32BitInstruction {
 impl Execute32BitInstruction for Cpu32Bit {
     type InstructionSet = Ri32imInstruction;
 
-    fn execute(&mut self, _instruction: Self::InstructionSet) -> Result<()> {
-        self.pc += 4;
-        return Ok(());
-        #[allow(unreachable_code)]
-        match _instruction {
+    fn execute(&mut self, instruction: Self::InstructionSet) -> Result<()> {
+        match instruction {
             Self::InstructionSet::IType {
                 operation,
                 rd,
@@ -95,7 +92,9 @@ impl Execute32BitInstruction for Cpu32Bit {
             Self::InstructionSet::UType { operation, rd, imm } => {
                 execute_utype_instruction(&mut self.registers, operation, rd, imm)
             }
-        }
+        }?;
+        self.pc += 4;
+        Ok(())
     }
 }
 
@@ -111,13 +110,60 @@ fn execute_itype_instruction(
 }
 
 fn execute_rtype_instruction(
-    _registers: &mut RegisterFile32Bit,
-    _operation: RTypeOperation,
-    _rd: RegisterMapping,
-    _rs1: RegisterMapping,
-    _rs2: RegisterMapping,
+    regs: &mut RegisterFile32Bit,
+    operation: RTypeOperation,
+    rd: RegisterMapping,
+    rs1: RegisterMapping,
+    rs2: RegisterMapping,
 ) -> Result<()> {
-    todo!()
+    match operation {
+        RTypeOperation::Add => regs[rd] = regs[rs1].wrapping_add(regs[rs2]),
+        RTypeOperation::And => regs[rd] = regs[rs1] & regs[rs2],
+        RTypeOperation::Or => regs[rd] = regs[rs1] | regs[rs2],
+        RTypeOperation::Sll => regs[rd] = regs[rs1] << (regs[rs2] & 0b11111),
+        RTypeOperation::Slt => {
+            regs[rd] = if (regs[rs1] as i32) < (regs[rs2] as i32) {
+                1
+            } else {
+                0
+            }
+        }
+        RTypeOperation::Sltu => regs[rd] = if regs[rs1] < regs[rs2] { 1 } else { 0 },
+        RTypeOperation::Sra => regs[rd] = ((regs[rs1] as i32) >> (regs[rs2] & 0b11111)) as u32,
+        RTypeOperation::Srl => regs[rd] = regs[rs1] >> (regs[rs2] & 0b11111),
+        RTypeOperation::Sub => regs[rd] = regs[rs1].wrapping_sub(regs[rs2]),
+        RTypeOperation::Xor => regs[rd] = regs[rs1] ^ regs[rs2],
+        RTypeOperation::Mul => regs[rd] = regs[rs1].wrapping_mul(regs[rs2]),
+        // Multiply High
+        RTypeOperation::Mulh => {
+            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i32 as i64) as u64 >> 32) as u32
+        }
+        RTypeOperation::Mulhu => regs[rd] = ((regs[rs1] as u64 * regs[rs2] as u64) >> 32) as u32,
+        RTypeOperation::Mulhsu => {
+            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i64) as u64 >> 32) as u32
+        }
+        RTypeOperation::Div => {
+            regs[rd] = (regs[rs1] as i32)
+                .checked_div(regs[rs2] as i32)
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32
+        }
+        RTypeOperation::Divu => {
+            regs[rd] = regs[rs1]
+                .checked_div(regs[rs2])
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?
+        }
+        RTypeOperation::Rem => {
+            regs[rd] = (regs[rs1] as i32)
+                .checked_rem(regs[rs2] as i32)
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32
+        }
+        RTypeOperation::Remu => {
+            regs[rd] = regs[rs1]
+                .checked_rem(regs[rs2])
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?
+        }
+    }
+    Ok(())
 }
 
 fn execute_stype_instruction(
