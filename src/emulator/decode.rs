@@ -70,7 +70,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     (0b011_0011, 0b101, 0b0000001) => RTypeOperation::Divu,
                     (0b011_0011, 0b110, 0b0000001) => RTypeOperation::Rem,
                     (0b011_0011, 0b111, 0b0000001) => RTypeOperation::Remu,
-                    _ => bail!("Unknown R-type instruction"),
+                    _ => bail!("Unknown R-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 Ok(Self::RType {
@@ -131,7 +131,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     // system instructions
                     (0b111_0011, 0b000, 0b0000_0000_0000) => ITypeOperation::Ecall,
                     (0b111_0011, 0b000, 0b0000_0000_0001) => ITypeOperation::Ebreak,
-                    _ => bail!("Unknown I-type instruction"),
+                    _ => bail!("Unknown I-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 // if the instruction is not one of the unsigned instructions, sign extend the immediate
@@ -164,7 +164,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     0b000 => STypeOperation::Sb,
                     0b001 => STypeOperation::Sh,
                     0b010 => STypeOperation::Sw,
-                    _ => bail!("Unknown S-type instruction"),
+                    _ => bail!("Unknown S-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 Ok(Self::SType {
@@ -196,7 +196,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     0b101 => SBTypeOperation::Bge,
                     0b110 => SBTypeOperation::Bltu,
                     0b111 => SBTypeOperation::Bgeu,
-                    _ => bail!("Unknown SB-type instruction"),
+                    _ => bail!("Unknown SB-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 Ok(Self::SBType {
@@ -227,13 +227,13 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 let operation = match opcode {
                     0b011_0111 => UTypeOperation::Lui,
                     0b001_0111 => UTypeOperation::Auipc,
-                    _ => bail!("Unknown U-type instruction"),
+                    _ => bail!("Unknown U-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 Ok(Self::UType { operation, rd:rd?, imm })
             }
             // Unknown instruction
-            _ => bail!("Unknown OpCode: {:07b}", opcode),
+            _ => bail!("Unknown OpCode: {:07b}\n machine code: {machine_code:#010x}", opcode),
         }
     }
 }
