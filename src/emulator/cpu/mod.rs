@@ -82,10 +82,10 @@ impl Cpu32Bit {
         // fetch and decode the instruction
         let instruction = self.memory.fetch_and_decode(self.pc)?;
 
-        debugger::clear_screen();
-        println!("Program Output:\n{}", self.output);
-        println!();
         if self.debug {
+            debugger::clear_screen();
+            println!("Program Output:\n{}", self.output);
+            println!();
             debugger::print_screen(self);
             println!();
             // pause execution until user input is received
@@ -97,9 +97,11 @@ impl Cpu32Bit {
                 match DebuggerCommand::from(input.trim()) {
                     DebuggerCommand::ContinueToNextBreakpoint => {
                         self.debug = false;
+                        println!("{}", self.output);
                         break;
                     }
                     DebuggerCommand::StepToNextInstruction => {
+                        println!("{}", self.output);
                         break;
                     }
                     DebuggerCommand::ExitProgram => {

@@ -344,7 +344,11 @@ fn process_ecall(
     output: &mut String,
 ) -> Result<()> {
     match Syscall::from(regs[RegisterMapping::A7] as u8) {
-        Syscall::PrintInt => output.push_str(&regs[RegisterMapping::A0].to_string()),
+        Syscall::PrintInt => {
+            let out = &regs[RegisterMapping::A0].to_string();
+            output.push_str(&regs[RegisterMapping::A0].to_string());
+            print!("{out}")
+        }
         Syscall::PrintString => {
             let mut addr = regs[RegisterMapping::A0];
             loop {
@@ -359,6 +363,7 @@ fn process_ecall(
                     break;
                 }
                 output.push(byte as u8 as char);
+                print!("{}", byte as u8 as char);
                 addr += 1;
             }
         }
@@ -386,7 +391,10 @@ fn process_ecall(
             memory.write(addr + i as u32, 0, Size::Byte)?;
         }
         Syscall::Exit => bail!("Program exited with code: 0"),
-        Syscall::PrintChar => output.push(char::from(regs[RegisterMapping::A0] as u8)),
+        Syscall::PrintChar => {
+            output.push(char::from(regs[RegisterMapping::A0] as u8));
+            println!("{}", char::from(regs[RegisterMapping::A0] as u8));
+        }
         Syscall::ReadChar => {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input)?;
@@ -404,9 +412,21 @@ fn process_ecall(
             let duration = std::time::Duration::from_millis(regs[RegisterMapping::A0] as u64);
             std::thread::sleep(duration);
         }
-        Syscall::PrintIntHex => output.push_str(&format!("{:#x}", regs[RegisterMapping::A0])),
-        Syscall::PrintIntBinary => output.push_str(&format!("{:#b}", regs[RegisterMapping::A0])),
-        Syscall::PrintIntUnsigned => output.push_str(&regs[RegisterMapping::A0].to_string()),
+        Syscall::PrintIntHex => {
+            let out = &format!("{:#x}", regs[RegisterMapping::A0]);
+            output.push_str(out);
+            print!("{out}")
+        }
+        Syscall::PrintIntBinary => {
+            let out = &format!("{:#b}", regs[RegisterMapping::A0]);
+            output.push_str(out);
+            print!("{out}")
+        }
+        Syscall::PrintIntUnsigned => {
+            let out = &format!("{}", regs[RegisterMapping::A0]);
+            output.push_str(out);
+            print!("{out}")
+        }
         Syscall::Exit2 => bail!("Program exited with code: {}", regs[RegisterMapping::A0]),
         Syscall::UnSupported => bail!("Unsupported syscall number: {}", regs[RegisterMapping::A7]),
     }
