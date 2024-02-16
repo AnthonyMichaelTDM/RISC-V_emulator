@@ -103,15 +103,21 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     (0b001_0011, 0b111, _) => ITypeOperation::Andi,
                     (0b001_0011, 0b110, _) => ITypeOperation::Ori,
                     (0b001_0011, 0b001, immediate ) if immediate >> 5 == 0b000_0000 => {
-                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        // only the lower 5 bits are used, these are the shift amount,
+                        // they are also always unsigned so this type of mask is safe
+                        imm = imm & 0b11111;
                         ITypeOperation::Slli
                     },
                     (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b000_0000 => {
-                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        // only the lower 5 bits are used, these are the shift amount,
+                        // they are also always unsigned so this type of mask is safe
+                        imm = imm & 0b11111;
                         ITypeOperation::Srli
                     },
                     (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b010_0000 => {
-                        imm = imm & 0b11111; // only the lower 5 bits are used, these are the shift amount
+                        // only the lower 5 bits are used, these are the shift amount,
+                        // they are also always unsigned so this type of mask is safe
+                        imm = imm & 0b11111;
                         ITypeOperation::Srai
                     },
                     (0b001_0011, 0b010, _) => ITypeOperation::Slti,

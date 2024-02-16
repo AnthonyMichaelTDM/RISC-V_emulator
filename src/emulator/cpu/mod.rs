@@ -5,8 +5,11 @@ use std::fmt;
 
 use anyhow::Result;
 
+use debugger::DebuggerCommand;
 use memory::MemoryBus;
 use registers::{RegisterFile32Bit, RegisterMapping};
+
+use crate::instruction_set_definition::{operations::ITypeOperation, Ri32imInstruction};
 
 use self::memory::TEXT_BASE;
 
@@ -29,6 +32,8 @@ pub struct Cpu32Bit {
     pub registers: RegisterFile32Bit,
     pub pc: u32,
     pub memory: MemoryBus,
+    /// Whether the CPU should pause before executing the next instruction.
+    pub debug: bool,
 }
 
 impl Default for Cpu32Bit {
@@ -45,6 +50,7 @@ impl Cpu32Bit {
             registers: RegisterFile32Bit::new(),
             pc: 0,
             memory: MemoryBus::new(),
+            debug: false,
         }
     }
 
@@ -71,6 +77,14 @@ impl Cpu32Bit {
     /// This method will fetch, decode, and execute the instruction at the current program counter.
     /// It will then update the program counter to the next instruction, branch, or jump as necessary.
     ///
+    /// # Side effects
+    ///
+    /// This method will update the CPU's state, including the program counter, registers, and memory.
+    ///
+    /// If the debug flag is set, this method will also print the CPU's state to the console,
+    /// and start the debugger.
+    /// The debugger will also start if the instruction is an ebreak.
+    ///
     /// # Errors
     ///
     /// This method will return an error if the instruction cannot be fetched, decoded, or executed.
@@ -79,6 +93,47 @@ impl Cpu32Bit {
     pub fn step(&mut self) -> Result<()> {
         // fetch and decode the instruction
         let instruction = self.memory.fetch_and_decode(self.pc)?;
+
+        // if the instruction is an ebreak,
+        // enter debugger mode
+        if let Ri32imInstruction::IType {
+            operation: ITypeOperation::Ebreak,
+            ..
+        } = instruction
+        {
+            // pause execution and wait for user input
+            self.debug = true;
+        }
+
+        if self.debug {
+            debugger::clear_screen();
+            debugger::print_screen(self);
+            println!();
+            // pause execution until user input is received
+            // this is useful for debugging, as it allows the user to inspect the CPU's state at each step
+            // and to step through the program one instruction at a time
+            loop {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+                match DebuggerCommand::from(input.trim()) {
+                    DebuggerCommand::ContinueToNextBreakpoint => {
+                        self.debug = false;
+                        break;
+                    }
+                    DebuggerCommand::StepToNextInstruction => {
+                        break;
+                    }
+                    DebuggerCommand::ExitProgram => {
+                        anyhow::bail!("User requested to quit");
+                    }
+                    DebuggerCommand::Unknown => {
+                        debugger::clear_screen();
+                        debugger::print_screen(self);
+                        println!("Unknown command: {}", input.trim());
+                    }
+                }
+            }
+        }
 
         // execute the instruction, updating the CPU's state as necessary (e.g. updating registers and memory, incrementing the program counter, etc.)
         self.execute(instruction)
@@ -128,5 +183,39 @@ impl fmt::Display for Cpu32Bit {
         )?;
         write!(f, "    }},\n")?;
         write!(f, "}}")
+    }
+}
+
+mod debugger {
+    pub fn clear_screen() {
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+    }
+
+    pub fn print_screen(cpu: &super::Cpu32Bit) {
+        // print cpu state
+        println!("CPU state:");
+        println!("{}", cpu);
+        //print instructions
+        println!("Press 'c' to continue to the next breakpoint");
+        println!("Press 's' or the Enter key to step to the next instruction");
+        println!("Press 'q' to quit the program");
+    }
+
+    pub enum DebuggerCommand {
+        ContinueToNextBreakpoint,
+        StepToNextInstruction,
+        ExitProgram,
+        Unknown,
+    }
+
+    impl From<&str> for DebuggerCommand {
+        fn from(s: &str) -> Self {
+            match s.trim() {
+                "c" => Self::ContinueToNextBreakpoint,
+                "s" | "" => Self::StepToNextInstruction,
+                "q" => Self::ExitProgram,
+                _ => Self::Unknown,
+            }
+        }
     }
 }

@@ -56,15 +56,12 @@ fn main() -> Result<()> {
     let mut cpu: Cpu32Bit = Cpu32Bit::new();
     cpu.load(text_section, data_section.unwrap_or_default(), entrypoint);
 
-    loop {
-        if args.debug {
-            // clear the screen
-            print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-            // print cpu state
-            println!("CPU state before fetching the next instruction:");
-            println!("{}", cpu);
-        }
+    if args.debug {
+        // pause before executing the first instruction
+        cpu.debug = true;
+    }
 
+    loop {
         if let Err(e) = cpu.step() {
             eprintln!("Error: {}", e);
             break;

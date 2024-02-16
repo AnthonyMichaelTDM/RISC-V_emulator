@@ -31,15 +31,6 @@ impl Execute32BitInstruction for Cpu32Bit {
     type InstructionSet = Ri32imInstruction;
 
     fn execute(&mut self, _instruction: Self::InstructionSet) -> Result<()> {
-        // pause execution until user input is received
-        // this is useful for debugging, as it allows the user to inspect the CPU's state at each step
-        // and to step through the program one instruction at a time
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if input.trim() == "q" {
-            anyhow::bail!("User requested to quit");
-        }
-
         self.pc += 4;
         return Ok(());
         #[allow(unreachable_code)]
