@@ -9,7 +9,7 @@ use debugger::DebuggerCommand;
 use memory::MemoryBus;
 use registers::{RegisterFile32Bit, RegisterMapping};
 
-use self::memory::TEXT_BASE;
+use self::memory::STACK_CEILING;
 
 use super::{execute::Execute32BitInstruction as _, fetch::Fetch32BitInstruction as _};
 
@@ -36,42 +36,26 @@ pub struct Cpu32Bit {
     pub output: String,
 }
 
-impl Default for Cpu32Bit {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Cpu32Bit {
-    /// Create a new CPU with the default state.
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            registers: RegisterFile32Bit::new(),
-            pc: 0,
-            memory: MemoryBus::new(),
-            debug: false,
-            output: String::new(),
-        }
-    }
-
     /// Load the given program into the CPU's memory and set the program counter to the given entrypoint.
     ///
     /// also resets the CPU's registers and memory to their default state
-    pub fn load(&mut self, text: &[u8], data: &[u8], entrypoint: u32) {
-        // reset the program counter
-        self.pc = entrypoint + TEXT_BASE;
+    pub fn new(text: &[u8], data: &[u8], entrypoint: u32) -> Self {
+        // init registers
+        let mut registers = RegisterFile32Bit::new();
+        // set the stack pointer to the top of the stack (highest address in the stack region)
+        registers[RegisterMapping::Sp] = STACK_CEILING;
+        // set the return address to the start of the text region, this will be overwritten by
+        // structs using this register file (e.g. the CPU) upon loading a program
+        registers[RegisterMapping::Ra] = entrypoint;
 
-        // reset registers
-        self.registers.reset();
-        // set the return address to the entrypoint
-        self.registers
-            .write(RegisterMapping::Ra, entrypoint + TEXT_BASE);
-
-        // reset memory
-        self.memory.clear();
-        self.memory.initialize_dram(data);
-        self.memory.initialize_text(text);
+        Self {
+            registers,
+            pc: entrypoint,
+            memory: MemoryBus::new(entrypoint, text, data),
+            debug: false,
+            output: String::new(),
+        }
     }
 
     /// Execute the current instruction and update the program counter.
@@ -136,6 +120,23 @@ impl Cpu32Bit {
 impl fmt::Display for Cpu32Bit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "CPU32Bit {{\n")?;
+        write!(f, "    memory bus layout: {{\n")?;
+        write!(f, "        text: {{\n")?;
+        write!(
+            f,
+            "            start: {:#010x},\n",
+            self.memory.entrypoint()
+        )?;
+        write!(f, "            size: {}\n", self.memory.code_size())?;
+        write!(f, "        }},\n")?;
+        write!(f, "        data: {{\n")?;
+        write!(
+            f,
+            "            start: {:#010x},\n",
+            self.memory.dram_start()
+        )?;
+        write!(f, "            size: {}\n", self.memory.dram_size())?;
+        write!(f, "        }},\n")?;
         write!(f, "    pc: {:#010x},\n", self.pc)?;
         write!(f, "    context: {{\n")?;
         // print the 4 instructions before the current instruction

@@ -3,10 +3,7 @@ use anyhow::{bail, Result};
 use crate::instruction_set_definition::Rv32imInstruction;
 
 use super::{
-    cpu::{
-        memory::{MemoryBus, TEXT_BASE},
-        Size,
-    },
+    cpu::{memory::MemoryBus, Size},
     decode::Decode32BitInstruction,
 };
 
@@ -37,7 +34,7 @@ impl Fetch32BitInstruction for MemoryBus {
     const INSTRUCTION_SIZE: Size = Size::Word;
 
     fn fetch_and_decode(&self, pc: Self::PC) -> Result<Self::InstructionSet> {
-        if pc.wrapping_sub(TEXT_BASE) >= self.code_size_bytes() as u32 {
+        if pc.wrapping_sub(self.entrypoint()) >= self.code_size() as u32 {
             bail!("Program counter out of bounds: {:#010x}", pc);
         }
 

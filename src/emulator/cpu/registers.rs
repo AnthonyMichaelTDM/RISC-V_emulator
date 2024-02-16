@@ -5,10 +5,7 @@ use std::{
 
 use anyhow::bail;
 
-use super::{
-    memory::{STACK_CEILING, TEXT_BASE},
-    REGISTERS_COUNT,
-};
+use super::REGISTERS_COUNT;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
 #[repr(u8)]
@@ -91,23 +88,9 @@ impl IndexMut<RegisterMapping> for RegisterFile32Bit {
 impl RegisterFile32Bit {
     #[must_use]
     pub const fn new() -> Self {
-        let mut registers = [0; REGISTERS_COUNT as usize];
-
-        // set the stack pointer to the top of the stack (highest address in the stack region)
-        registers[RegisterMapping::Sp as usize] = STACK_CEILING;
-        // set the return address to the start of the text region, this will be overwritten by
-        // structs using this register file (e.g. the CPU) upon loading a program
-        registers[RegisterMapping::Ra as usize] = TEXT_BASE;
-
-        Self { registers }
-    }
-
-    pub fn reset(&mut self) {
-        for i in 0..REGISTERS_COUNT {
-            self.registers[i as usize] = 0;
+        Self {
+            registers: [0; REGISTERS_COUNT as usize],
         }
-        self.registers[RegisterMapping::Sp as usize] = STACK_CEILING;
-        self.registers[RegisterMapping::Ra as usize] = TEXT_BASE;
     }
 
     #[must_use]

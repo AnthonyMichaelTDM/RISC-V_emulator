@@ -53,8 +53,8 @@ fn main() -> Result<()> {
         "Text section length is not a multiple of 4, this is not a valid RISC-V binary"
     );
 
-    let mut cpu: Cpu32Bit = Cpu32Bit::new();
-    cpu.load(text_section, data_section.unwrap_or_default(), entrypoint);
+    let mut cpu: Cpu32Bit =
+        Cpu32Bit::new(text_section, data_section.unwrap_or_default(), entrypoint);
 
     if args.debug {
         // pause before executing the first instruction

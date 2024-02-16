@@ -2,21 +2,18 @@ use anyhow::{bail, Result};
 
 use crate::emulator::cpu::Size;
 
-/// The base address of the text section.
-pub const TEXT_BASE: u32 = 0x0040_0000; // where the pc starts
+// /// The base address of the text section.
+// pub const TEXT_BASE: u32 = 0x0040_0000; // where the pc starts
 /// The text section is 4MB in size.
 pub const TEXT_SIZE: u32 = 0x0040_0000;
-/// The end address of the text section.
-pub const TEXT_END: u32 = TEXT_BASE + TEXT_SIZE - 4;
+// /// The end address of the text section.
+// pub const TEXT_END: u32 = TEXT_BASE + TEXT_SIZE - 4;
 
 /// the data portion of the memory starts at `0x1000_0000` with static data (.data section)
 /// and grows upwards to `0x1000_0000` + 4MB
 /// the end of the data portion which is at `0x7FFF_FFFF`, and it is the start of the stack, wich grows downwards
 /// the heap starts at the end of the data section and grows upwards
-pub const DRAM_BASE: u32 = 0x1000_0000;
 pub const STATIC_DATA_SIZE: u32 = 0x0040_0000;
-pub const STATIC_DATA_END: u32 = DRAM_BASE + STATIC_DATA_SIZE - 4;
-pub const HEAP_BASE: u32 = STATIC_DATA_END + 4;
 pub const STACK_CEILING: u32 = 0x7FFF_EFFC;
 pub const DRAM_END: u32 = 0x8000_0000;
 
@@ -123,47 +120,36 @@ impl MemoryRegion {
 pub struct MemoryBus {
     dram: MemoryRegion,
     text: MemoryRegion,
-    code_size_bytes: usize,
-}
-
-impl Default for MemoryBus {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl MemoryBus {
     /// Create a new `MemoryBus` object.
     #[must_use]
-    pub fn new() -> Self {
-        Self {
-            dram: MemoryRegion::new(DRAM_BASE, DRAM_END - DRAM_BASE),
-            text: MemoryRegion::new(TEXT_BASE, TEXT_SIZE),
-            code_size_bytes: 0,
-        }
-    }
+    pub fn new(entrypoint: u32, code: &[u8], data: &[u8]) -> Self {
+        let dram_start = entrypoint + code.len() as u32 + 0x1000;
+        let mut dram = MemoryRegion::new(dram_start, DRAM_END - dram_start);
+        dram.initialize(data);
+        let mut text = MemoryRegion::new(entrypoint, code.len() as u32 + 4);
+        text.initialize(code);
 
-    /// Clear the memory (revert to the initial state).
-    pub fn clear(&mut self) {
-        self.dram = MemoryRegion::new(DRAM_BASE, DRAM_END - DRAM_BASE);
-        self.text = MemoryRegion::new(TEXT_BASE, TEXT_SIZE);
-        self.code_size_bytes = 0;
-    }
-
-    /// Set the binary data to the memory.
-    pub fn initialize_dram(&mut self, data: &[u8]) {
-        self.dram.initialize(data);
-    }
-
-    /// Set the binary code to the memory.
-    pub fn initialize_text(&mut self, data: &[u8]) {
-        self.code_size_bytes = data.len();
-        self.text.initialize(data);
+        Self { dram, text }
     }
 
     /// get the size of the text segment in bytes
-    pub fn code_size_bytes(&self) -> usize {
-        self.code_size_bytes
+    pub fn code_size(&self) -> u32 {
+        self.text.size
+    }
+    /// get the entrypoint of the program
+    pub fn entrypoint(&self) -> u32 {
+        self.text.base
+    }
+
+    pub fn dram_start(&self) -> u32 {
+        self.dram.base
+    }
+
+    pub fn dram_size(&self) -> u32 {
+        self.dram.size
     }
 
     /// Load a `size`-bit data from the device that connects to the system bus.
@@ -175,8 +161,12 @@ impl MemoryBus {
     /// This method will return an error if the address is out of bounds.
     pub fn read(&self, addr: u32, size: Size) -> Result<u32> {
         match addr {
-            TEXT_BASE..=TEXT_END => self.text.read(addr, size),
-            DRAM_BASE..=DRAM_END => self.dram.read(addr, size),
+            addr if addr >= self.entrypoint()
+                && addr <= self.entrypoint() + self.code_size() as u32 =>
+            {
+                self.text.read(addr, size)
+            }
+            addr if addr >= self.dram_start() && addr <= DRAM_END => self.dram.read(addr, size),
             _ => bail!("Unkown or Out-Of-Bounds memory region addressed"),
         }
     }
@@ -191,8 +181,14 @@ impl MemoryBus {
     /// or if the address is in the text section. (self modifying code is not supported)
     pub fn write(&mut self, addr: u32, value: u32, size: Size) -> Result<()> {
         match addr {
-            TEXT_BASE..=TEXT_END => bail!("Self modifying code is not supported"),
-            DRAM_BASE..=DRAM_END => self.dram.write(addr, value, size),
+            addr if addr >= self.entrypoint()
+                && addr <= self.entrypoint() + self.code_size() as u32 =>
+            {
+                bail!("Self modifying code is not supported")
+            }
+            addr if addr >= self.dram_start() && addr <= DRAM_END => {
+                self.dram.write(addr, value, size)
+            }
             _ => bail!("Unkown memory region addressed"),
         }
     }
