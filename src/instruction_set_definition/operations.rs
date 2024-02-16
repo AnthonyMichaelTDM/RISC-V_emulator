@@ -95,8 +95,6 @@ pub enum STypeOperation {
     #[display(fmt = "sw")]
     Sw,
     // below are not needed for this project, but included for completeness
-    #[display(fmt = "sd")]
-    Sd,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]

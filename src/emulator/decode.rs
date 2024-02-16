@@ -164,7 +164,6 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     0b000 => STypeOperation::Sb,
                     0b001 => STypeOperation::Sh,
                     0b010 => STypeOperation::Sw,
-                    0b011 => STypeOperation::Sd,
                     _ => bail!("Unknown S-type instruction"),
                 };
 
