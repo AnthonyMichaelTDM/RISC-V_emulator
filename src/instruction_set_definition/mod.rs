@@ -12,7 +12,7 @@ pub mod operations;
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]
 pub enum Rv32imInstruction {
     #[display(
-        fmt = "{:10} {rd}, {rs1}, {rs2}        # R-Type:  operation, rd, rs1, rs2",
+        fmt = "{:10} {rd}, {rs1}, {rs2}        # R-Type:  operation, rd,  rs1, rs2",
         "operation.to_string()"
     )]
     RType {
@@ -24,7 +24,7 @@ pub enum Rv32imInstruction {
         funct7: u8,
     },
     #[display(
-        fmt = "{:10} {rd}, {rs1}, {imm:#010x} # I-Type:  operation, rd, rs1, imm",
+        fmt = "{:10} {rd}, {rs1}, {imm:#010x} # I-Type:  operation, rd,  rs1, imm",
         "operation.to_string()"
     )]
     IType {
@@ -57,7 +57,7 @@ pub enum Rv32imInstruction {
         imm: i32,
     },
     #[display(
-        fmt = "{:10} {rd},      {imm:#010x} # UJ-Type: operation, rd, imm",
+        fmt = "{:10} {rd},      {imm:#010x} # UJ-Type: operation, rd,  imm",
         "operation.to_string()"
     )]
     UJType {
@@ -66,7 +66,7 @@ pub enum Rv32imInstruction {
         imm: u32,
     },
     #[display(
-        fmt = "{:10} {rd},      {imm:#010x} # U-Type:  operation, rd, imm",
+        fmt = "{:10} {rd},      {imm:#010x} # U-Type:  operation, rd,  imm",
         "operation.to_string()"
     )]
     UType {
