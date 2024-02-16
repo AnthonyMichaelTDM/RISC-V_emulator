@@ -1,4 +1,7 @@
-use std::fmt;
+use std::{
+    fmt,
+    ops::{Index, IndexMut},
+};
 
 use anyhow::bail;
 
@@ -70,6 +73,19 @@ impl TryFrom<u8> for RegisterMapping {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct RegisterFile32Bit {
     registers: [u32; REGISTERS_COUNT as usize],
+}
+
+impl Index<RegisterMapping> for RegisterFile32Bit {
+    type Output = u32;
+    fn index(&self, index: RegisterMapping) -> &Self::Output {
+        &self.registers[index as usize]
+    }
+}
+
+impl IndexMut<RegisterMapping> for RegisterFile32Bit {
+    fn index_mut(&mut self, index: RegisterMapping) -> &mut Self::Output {
+        &mut self.registers[index as usize]
+    }
 }
 
 impl RegisterFile32Bit {
