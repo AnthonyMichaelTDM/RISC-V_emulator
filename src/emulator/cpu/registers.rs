@@ -81,9 +81,7 @@ impl Index<RegisterMapping> for RegisterFile32Bit {
 
 impl IndexMut<RegisterMapping> for RegisterFile32Bit {
     fn index_mut(&mut self, index: RegisterMapping) -> &mut Self::Output {
-        if index == RegisterMapping::Zero {
-            panic!("Cannot write to the zero register");
-        }
+        assert!(index != RegisterMapping::Zero, "Cannot write to the zero register");
         &mut self.registers[index as usize]
     }
 }

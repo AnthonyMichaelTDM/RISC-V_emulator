@@ -40,6 +40,7 @@ impl Cpu32Bit {
     /// Load the given program into the CPU's memory and set the program counter to the given entrypoint.
     ///
     /// also resets the CPU's registers and memory to their default state
+    #[must_use]
     pub fn new(text: &[u8], data: &[u8], entrypoint: u32, gp: Option<u32>) -> Self {
         // init registers
         let mut registers = RegisterFile32Bit::new();
@@ -125,62 +126,53 @@ impl Cpu32Bit {
 
 impl fmt::Display for Cpu32Bit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CPU32Bit {{\n")?;
-        write!(f, "    memory bus layout: {{\n")?;
-        write!(f, "        text: {{\n")?;
-        write!(
-            f,
-            "            start: {:#010x},\n",
-            self.memory.entrypoint()
-        )?;
-        write!(f, "            size: {}\n", self.memory.code_size())?;
-        write!(f, "        }},\n")?;
-        write!(f, "        data: {{\n")?;
-        write!(
-            f,
-            "            start: {:#010x},\n",
-            self.memory.dram_start()
-        )?;
-        write!(f, "            size: {}\n", self.memory.dram_size())?;
-        write!(f, "        }},\n")?;
-        write!(f, "    pc: {:#010x},\n", self.pc)?;
-        write!(f, "    context: {{\n")?;
+        writeln!(f, "CPU32Bit {{")?;
+        writeln!(f, "    memory bus layout: {{")?;
+        writeln!(f, "        text: {{")?;
+        writeln!(f, "            start: {:#010x},", self.memory.entrypoint())?;
+        writeln!(f, "            size: {}", self.memory.code_size())?;
+        writeln!(f, "        }},")?;
+        writeln!(f, "        data: {{")?;
+        writeln!(f, "            start: {:#010x},", self.memory.dram_start())?;
+        writeln!(f, "            size: {}", self.memory.dram_size())?;
+        writeln!(f, "        }},")?;
+        writeln!(f, "    pc: {:#010x},", self.pc)?;
+        writeln!(f, "    context: {{")?;
         // print the 4 instructions before the current instruction
         for offset in (1..=4).rev() {
             let addr = self.pc.wrapping_sub(offset * 4);
             if let Ok(instruction) = self.memory.fetch_and_decode(addr) {
-                write!(f, "        {:#010x}: {},\n", addr, instruction)?;
+                writeln!(f, "        {addr:#010x}: {instruction},")?;
             } else {
-                write!(f, "        {:#010x}: <invalid instruction>,\n", addr)?;
+                writeln!(f, "        {addr:#010x}: <invalid instruction>,")?;
             }
         }
-        write!(
+        writeln!(
             f,
-            "   ---> {:#010x}: {},\n",
+            "   ---> {:#010x}: {},",
             self.pc,
-            if let Ok(instruction) = self.memory.fetch_and_decode(self.pc) {
-                format!("{}", instruction)
-            } else {
-                "<invalid instruction>".to_string()
-            }
+            self.memory.fetch_and_decode(self.pc).map_or_else(
+                |_| "<invalid instruction>".to_string(),
+                |instruction| format!("{instruction}")
+            )
         )?;
         // print the 4 instructions after the current instruction
         for offset in 1..=4 {
             let addr = self.pc.wrapping_add(offset * 4);
             if let Ok(instruction) = self.memory.fetch_and_decode(addr) {
-                write!(f, "        {:#010x}: {},\n", addr, instruction)?;
+                writeln!(f, "        {addr:#010x}: {instruction},")?;
             } else {
-                write!(f, "        {:#010x}: <invalid instruction>,\n", addr)?;
+                writeln!(f, "        {addr:#010x}: <invalid instruction>,")?;
             }
         }
-        write!(f, "    }},\n")?;
+        writeln!(f, "    }},")?;
         write!(f, "    registers: {{")?;
-        write!(
+        writeln!(
             f,
-            "    {}\n",
-            self.registers.to_string().replace("\n", "\n        ")
+            "    {}",
+            self.registers.to_string().replace('\n', "\n        ")
         )?;
-        write!(f, "    }},\n")?;
+        writeln!(f, "    }},")?;
         write!(f, "}}")
     }
 }
@@ -193,13 +185,14 @@ mod debugger {
     pub fn print_screen(cpu: &super::Cpu32Bit) {
         // print cpu state
         println!("CPU state:");
-        println!("{}", cpu);
+        println!("{cpu}");
         //print instructions
         println!("Press 'c' to continue to the next breakpoint");
         println!("Press 's' or the Enter key to step to the next instruction");
         println!("Press 'q' to quit the program");
     }
 
+    #[allow(clippy::module_name_repetitions)]
     pub enum DebuggerCommand {
         ContinueToNextBreakpoint,
         StepToNextInstruction,

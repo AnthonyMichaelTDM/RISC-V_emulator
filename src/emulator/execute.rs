@@ -1,3 +1,7 @@
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_possible_truncation)]
+
 use anyhow::{bail, Result};
 
 use crate::instruction_set_definition::{
@@ -14,6 +18,7 @@ use super::cpu::{
     Cpu32Bit, Size,
 };
 
+#[allow(clippy::module_name_repetitions)]
 pub trait Execute32BitInstruction {
     type InstructionSet;
 
@@ -54,12 +59,11 @@ impl Execute32BitInstruction for Cpu32Bit {
                     rs1,
                     imm,
                 )?;
-                if let ITypeOperation::Jalr = operation {
+                if operation == ITypeOperation::Jalr {
                     // if the instruction is a jalr, the program counter is already updated
                     // by the execute_itype_instruction function
                     return Ok(());
                 }
-                Ok(())
             }
             Self::InstructionSet::RType {
                 operation,
@@ -68,7 +72,7 @@ impl Execute32BitInstruction for Cpu32Bit {
                 rs1,
                 rs2,
                 funct7: _,
-            } => execute_rtype_instruction(&mut self.registers, operation, rd, rs1, rs2),
+            } => execute_rtype_instruction(&mut self.registers, operation, rd, rs1, rs2)?,
             Self::InstructionSet::SType {
                 operation,
                 funct3: _,
@@ -82,39 +86,38 @@ impl Execute32BitInstruction for Cpu32Bit {
                 rs1,
                 rs2,
                 imm,
-            ),
+            )?,
             Self::InstructionSet::SBType {
                 operation,
                 funct3: _,
                 rs1,
                 rs2,
                 imm,
-            } => execute_sbtype_instruction(
-                &mut self.pc,
-                &mut self.registers,
-                operation,
-                rs1,
-                rs2,
-                imm,
-            ),
+            } => {
+                execute_sbtype_instruction(&mut self.pc, &self.registers, operation, rs1, rs2, imm);
+            }
             Self::InstructionSet::UJType { operation, rd, imm } => {
-                return execute_ujtype_instruction(
-                    &mut self.pc,
-                    &mut self.registers,
-                    operation,
-                    rd,
-                    imm,
-                )
+                return {
+                    execute_ujtype_instruction(
+                        &mut self.pc,
+                        &mut self.registers,
+                        operation,
+                        rd,
+                        imm,
+                    );
+                    Ok(())
+                };
             }
             Self::InstructionSet::UType { operation, rd, imm } => {
-                execute_utype_instruction(&self.pc, &mut self.registers, operation, rd, imm)
+                execute_utype_instruction(self.pc, &mut self.registers, operation, rd, imm);
             }
-        }?;
+        }
         self.pc += 4;
         Ok(())
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn execute_itype_instruction(
     debug: &mut bool,
     pc: &mut u32,
@@ -131,34 +134,34 @@ fn execute_itype_instruction(
         ITypeOperation::Andi => regs[rd] = regs[rs1] & (imm as u32),
         ITypeOperation::Jalr => {
             let t = *pc + 4;
-            *pc = (regs[rs1].wrapping_add(imm as u32) & !1) as u32;
+            *pc = regs[rs1].wrapping_add(imm as u32) & !1;
             if rd != RegisterMapping::Zero {
                 regs[rd] = t;
             }
         }
         ITypeOperation::Lb => {
             regs[rd] = ((memory.read(regs[rs1].wrapping_add_signed(imm), Size::Byte)? as i32) << 24
-                >> 24) as u32
+                >> 24) as u32;
         }
         ITypeOperation::Lh => {
             regs[rd] = ((memory.read(regs[rs1].wrapping_add_signed(imm), Size::Half)? as i32) << 16
-                >> 16) as u32
+                >> 16) as u32;
         }
         ITypeOperation::Lw => {
-            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Word)?
+            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Word)?;
         }
         ITypeOperation::Ori => regs[rd] = regs[rs1] | (imm as u32),
         ITypeOperation::Slli => regs[rd] = regs[rs1] << (imm & 0b11111),
-        ITypeOperation::Slti => regs[rd] = if (regs[rs1] as i32) < imm { 1 } else { 0 },
-        ITypeOperation::Sltiu => regs[rd] = if regs[rs1] < (imm as u32) { 1 } else { 0 },
+        ITypeOperation::Slti => regs[rd] = u32::from((regs[rs1] as i32) < imm),
+        ITypeOperation::Sltiu => regs[rd] = u32::from(regs[rs1] < (imm as u32)),
         ITypeOperation::Srai => regs[rd] = ((regs[rs1] as i32) >> (imm & 0b11111)) as u32,
         ITypeOperation::Srli => regs[rd] = regs[rs1] >> (imm & 0b11111),
         ITypeOperation::Xori => regs[rd] = regs[rs1] ^ (imm as u32),
         ITypeOperation::Lbu => {
-            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Byte)?
+            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Byte)?;
         }
         ITypeOperation::Lhu => {
-            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Half)?
+            regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Half)?;
         }
         ITypeOperation::Fence => unimplemented!("fence instruction not implemented"),
         ITypeOperation::FenceI => unimplemented!("fence.i instruction not implemented"),
@@ -181,13 +184,9 @@ fn execute_rtype_instruction(
         RTypeOperation::Or => regs[rd] = regs[rs1] | regs[rs2],
         RTypeOperation::Sll => regs[rd] = regs[rs1] << (regs[rs2] & 0b11111),
         RTypeOperation::Slt => {
-            regs[rd] = if (regs[rs1] as i32) < (regs[rs2] as i32) {
-                1
-            } else {
-                0
-            }
+            regs[rd] = u32::from((regs[rs1] as i32) < (regs[rs2] as i32));
         }
-        RTypeOperation::Sltu => regs[rd] = if regs[rs1] < regs[rs2] { 1 } else { 0 },
+        RTypeOperation::Sltu => regs[rd] = u32::from(regs[rs1] < regs[rs2]),
         RTypeOperation::Sra => regs[rd] = ((regs[rs1] as i32) >> (regs[rs2] & 0b11111)) as u32,
         RTypeOperation::Srl => regs[rd] = regs[rs1] >> (regs[rs2] & 0b11111),
         RTypeOperation::Sub => regs[rd] = regs[rs1].wrapping_sub(regs[rs2]),
@@ -195,31 +194,31 @@ fn execute_rtype_instruction(
         RTypeOperation::Mul => regs[rd] = regs[rs1].wrapping_mul(regs[rs2]),
         // Multiply High
         RTypeOperation::Mulh => {
-            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i32 as i64) as u64 >> 32) as u32
+            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i32 as i64) as u64 >> 32) as u32;
         }
         RTypeOperation::Mulhu => regs[rd] = ((regs[rs1] as u64 * regs[rs2] as u64) >> 32) as u32,
         RTypeOperation::Mulhsu => {
-            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i64) as u64 >> 32) as u32
+            regs[rd] = ((regs[rs1] as i32 as i64 * regs[rs2] as i64) as u64 >> 32) as u32;
         }
         RTypeOperation::Div => {
             regs[rd] = (regs[rs1] as i32)
                 .checked_div(regs[rs2] as i32)
-                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32;
         }
         RTypeOperation::Divu => {
             regs[rd] = regs[rs1]
                 .checked_div(regs[rs2])
-                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?;
         }
         RTypeOperation::Rem => {
             regs[rd] = (regs[rs1] as i32)
                 .checked_rem(regs[rs2] as i32)
-                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))? as u32;
         }
         RTypeOperation::Remu => {
             regs[rd] = regs[rs1]
                 .checked_rem(regs[rs2])
-                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?
+                .ok_or_else(|| anyhow::anyhow!("Division by zero"))?;
         }
     }
     Ok(())
@@ -248,12 +247,12 @@ fn execute_stype_instruction(
 
 fn execute_sbtype_instruction(
     pc: &mut u32,
-    regs: &mut RegisterFile32Bit,
+    regs: &RegisterFile32Bit,
     operation: SBTypeOperation,
     rs1: RegisterMapping,
     rs2: RegisterMapping,
     offset: i32,
-) -> Result<()> {
+) {
     match operation {
         SBTypeOperation::Beq => {
             if regs[rs1] == regs[rs2] {
@@ -286,7 +285,6 @@ fn execute_sbtype_instruction(
             }
         }
     }
-    Ok(())
 }
 
 fn execute_ujtype_instruction(
@@ -295,7 +293,7 @@ fn execute_ujtype_instruction(
     operation: UJTypeOperation,
     rd: RegisterMapping,
     offset: u32,
-) -> Result<()> {
+) {
     match operation {
         UJTypeOperation::Jal => {
             if rd != RegisterMapping::Zero {
@@ -304,21 +302,19 @@ fn execute_ujtype_instruction(
             *pc = pc.wrapping_add_signed(((offset as i32) << 12) >> 12);
         }
     }
-    Ok(())
 }
 
 fn execute_utype_instruction(
-    pc: &u32,
+    pc: u32,
     registers: &mut RegisterFile32Bit,
     operation: UTypeOperation,
     rd: RegisterMapping,
     imm: u32,
-) -> Result<()> {
+) {
     match operation {
         UTypeOperation::Lui => registers[rd] = imm << 12,
         UTypeOperation::Auipc => registers[rd] = pc.wrapping_add(imm << 12),
     }
-    Ok(())
 }
 
 /// Processes Syscalls (ecall) made by the program being executed.
@@ -343,11 +339,11 @@ fn process_ecall(
     memory: &mut MemoryBus,
     output: &mut String,
 ) -> Result<()> {
-    match Syscall::from(regs[RegisterMapping::A7] as u8) {
+    match Syscall::from(regs[RegisterMapping::A7]) {
         Syscall::PrintInt => {
             let out = &regs[RegisterMapping::A0].to_string();
             output.push_str(&regs[RegisterMapping::A0].to_string());
-            print!("{out}")
+            print!("{out}");
         }
         Syscall::PrintString => {
             let mut addr = regs[RegisterMapping::A0];
@@ -362,16 +358,17 @@ fn process_ecall(
                 if byte == 0 {
                     break;
                 }
-                output.push(byte as u8 as char);
-                print!("{}", byte as u8 as char);
+                let byte = (byte & 0xff) as u8 as char;
+                output.push(byte);
+                print!("{byte}");
                 addr += 1;
             }
         }
         Syscall::ReadInt => {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input)?;
-            let value = input.trim().parse::<i32>()?;
-            regs[RegisterMapping::A0] = value as u32;
+            let value = input.trim().parse::<i32>()? as u32;
+            regs[RegisterMapping::A0] = value;
         }
         Syscall::ReadString => {
             let mut input = String::new();
@@ -384,7 +381,7 @@ fn process_ecall(
                 if i >= max_len - 1 {
                     break;
                 }
-                memory.write(addr + i as u32, byte as u32, Size::Byte)?;
+                memory.write(addr + i as u32, u32::from(byte), Size::Byte)?;
                 i += 1;
             }
             // ensure the last byte is the null terminator
@@ -392,14 +389,15 @@ fn process_ecall(
         }
         Syscall::Exit => bail!("Program exited with code: 0"),
         Syscall::PrintChar => {
-            output.push(char::from(regs[RegisterMapping::A0] as u8));
-            println!("{}", char::from(regs[RegisterMapping::A0] as u8));
+            let out = char::from((regs[RegisterMapping::A0] & 0xff) as u8);
+            output.push(out);
+            println!("{out}");
         }
         Syscall::ReadChar => {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input)?;
             let value = input.trim().chars().next().unwrap() as u8;
-            regs[RegisterMapping::A0] = value as u32;
+            regs[RegisterMapping::A0] = u32::from(value);
         }
         Syscall::Time => {
             let time = std::time::SystemTime::now()
@@ -409,23 +407,23 @@ fn process_ecall(
             regs[RegisterMapping::A1] = (time.as_millis() >> 32) as u32;
         }
         Syscall::Sleep => {
-            let duration = std::time::Duration::from_millis(regs[RegisterMapping::A0] as u64);
+            let duration = std::time::Duration::from_millis(u64::from(regs[RegisterMapping::A0]));
             std::thread::sleep(duration);
         }
         Syscall::PrintIntHex => {
             let out = &format!("{:#x}", regs[RegisterMapping::A0]);
             output.push_str(out);
-            print!("{out}")
+            print!("{out}");
         }
         Syscall::PrintIntBinary => {
             let out = &format!("{:#b}", regs[RegisterMapping::A0]);
             output.push_str(out);
-            print!("{out}")
+            print!("{out}");
         }
         Syscall::PrintIntUnsigned => {
             let out = &format!("{}", regs[RegisterMapping::A0]);
             output.push_str(out);
-            print!("{out}")
+            print!("{out}");
         }
         Syscall::Exit2 => bail!("Program exited with code: {}", regs[RegisterMapping::A0]),
         Syscall::UnSupported => bail!("Unsupported syscall number: {}", regs[RegisterMapping::A7]),
@@ -434,7 +432,6 @@ fn process_ecall(
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(u8)]
 enum Syscall {
     /// Print an integer to the console.
     /// # Inputs:
@@ -500,23 +497,23 @@ enum Syscall {
     UnSupported,
 }
 
-impl From<u8> for Syscall {
-    fn from(value: u8) -> Self {
+impl From<u32> for Syscall {
+    fn from(value: u32) -> Self {
         match value {
-            1 => Syscall::PrintInt,
-            4 => Syscall::PrintString,
-            5 => Syscall::ReadInt,
-            8 => Syscall::ReadString,
-            10 => Syscall::Exit,
-            11 => Syscall::PrintChar,
-            12 => Syscall::ReadChar,
-            30 => Syscall::Time,
-            32 => Syscall::Sleep,
-            34 => Syscall::PrintIntHex,
-            35 => Syscall::PrintIntBinary,
-            36 => Syscall::PrintIntUnsigned,
-            93 => Syscall::Exit2,
-            _ => Syscall::UnSupported,
+            1 => Self::PrintInt,
+            4 => Self::PrintString,
+            5 => Self::ReadInt,
+            8 => Self::ReadString,
+            10 => Self::Exit,
+            11 => Self::PrintChar,
+            12 => Self::ReadChar,
+            30 => Self::Time,
+            32 => Self::Sleep,
+            34 => Self::PrintIntHex,
+            35 => Self::PrintIntBinary,
+            36 => Self::PrintIntUnsigned,
+            93 => Self::Exit2,
+            _ => Self::UnSupported,
         }
     }
 }

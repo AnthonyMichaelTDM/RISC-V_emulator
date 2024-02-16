@@ -59,16 +59,14 @@ fn main() -> Result<()> {
     );
 
     // extract `__global_pointer$` from the ELF file, it's a symbol not a section
-    let gp = file
-        .symbol_table()?
-        .map(|table| {
-            table
-                .0
-                .iter()
-                .find(|symbol| table.1.get(symbol.st_name as usize).unwrap() == "__global_pointer$")
-                .map(|symbol| symbol.st_value as u32)
-        })
-        .flatten();
+    #[allow(clippy::cast_possible_truncation)]
+    let gp = file.symbol_table()?.and_then(|table| {
+        table
+            .0
+            .iter()
+            .find(|symbol| table.1.get(symbol.st_name as usize).unwrap() == "__global_pointer$")
+            .map(|symbol| symbol.st_value as u32)
+    });
 
     let mut cpu: Cpu32Bit = Cpu32Bit::new(
         text_section,
@@ -84,7 +82,7 @@ fn main() -> Result<()> {
 
     loop {
         if let Err(e) = cpu.step() {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             break;
         }
     }

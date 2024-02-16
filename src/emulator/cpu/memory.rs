@@ -126,9 +126,11 @@ impl MemoryBus {
     /// Create a new `MemoryBus` object.
     #[must_use]
     pub fn new(entrypoint: u32, code: &[u8], data: &[u8]) -> Self {
+        #[allow(clippy::cast_possible_truncation)] // we know that the code length is less than 4GB
         let dram_start = entrypoint + code.len() as u32 + 0x1000;
         let mut dram = MemoryRegion::new(dram_start, DRAM_END - dram_start);
         dram.initialize(data);
+        #[allow(clippy::cast_possible_truncation)] // we know that the code length is less than 4GB
         let mut text = MemoryRegion::new(entrypoint, code.len() as u32 + 4);
         text.initialize(code);
 
@@ -136,19 +138,23 @@ impl MemoryBus {
     }
 
     /// get the size of the text segment in bytes
-    pub fn code_size(&self) -> u32 {
+    #[must_use]
+    pub const fn code_size(&self) -> u32 {
         self.text.size
     }
     /// get the entrypoint of the program
-    pub fn entrypoint(&self) -> u32 {
+    #[must_use]
+    pub const fn entrypoint(&self) -> u32 {
         self.text.base
     }
 
-    pub fn dram_start(&self) -> u32 {
+    #[must_use]
+    pub const fn dram_start(&self) -> u32 {
         self.dram.base
     }
 
-    pub fn dram_size(&self) -> u32 {
+    #[must_use]
+    pub const fn dram_size(&self) -> u32 {
         self.dram.size
     }
 
@@ -161,9 +167,7 @@ impl MemoryBus {
     /// This method will return an error if the address is out of bounds.
     pub fn read(&self, addr: u32, size: Size) -> Result<u32> {
         match addr {
-            addr if addr >= self.entrypoint()
-                && addr <= self.entrypoint() + self.code_size() as u32 =>
-            {
+            addr if addr >= self.entrypoint() && addr <= self.entrypoint() + self.code_size() => {
                 self.text.read(addr, size)
             }
             addr if addr >= self.dram_start() && addr <= DRAM_END => self.dram.read(addr, size),
@@ -181,9 +185,7 @@ impl MemoryBus {
     /// or if the address is in the text section. (self modifying code is not supported)
     pub fn write(&mut self, addr: u32, value: u32, size: Size) -> Result<()> {
         match addr {
-            addr if addr >= self.entrypoint()
-                && addr <= self.entrypoint() + self.code_size() as u32 =>
-            {
+            addr if addr >= self.entrypoint() && addr <= self.entrypoint() + self.code_size() => {
                 bail!("Self modifying code is not supported")
             }
             addr if addr >= self.dram_start() && addr <= DRAM_END => {

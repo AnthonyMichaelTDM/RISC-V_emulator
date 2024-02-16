@@ -10,8 +10,6 @@ only supports the `.text` and `.data` sections
 
 doesn't support compressed binaries
 
-I don't know how to initialize the global pointer register, so you need to use the `-mno-relax` flag when compiling your code with the riscv toolchain.
-
 assumes that .data and .text are contiguous in memory, with a small 0x1000 byte gap between them.
 
 ## syscall support
@@ -28,14 +26,12 @@ besides the obvious, you need to have the riscv toolchain installed. You can use
 sudo paru -S riscv64-unknown-elf-gcc
 ```
 
-The entry point for the emulator is `0x0` so make sure your code starts at that address.
-
 ## Getting a RISC-V ELF file
 
 first write your risc-v `.asm` file, then compile it using the riscv toolchain:
 
 ```bash
-riscv64-unknown-elf-gcc -march=rvim -mabi=ilp32 -mno-relax -x assembler -nostdlib -o <OUTPUT_FILE>.bin <INPUT_FILE>.asm
+riscv64-unknown-elf-gcc -march=rvim -mabi=ilp32 -x assembler -nostdlib -o <OUTPUT_FILE>.bin <INPUT_FILE>.asm
 ```
 
 you can use the `riscv64-elf-objdump` tool to see the contents of the file:

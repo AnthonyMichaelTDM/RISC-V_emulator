@@ -34,7 +34,7 @@ impl Fetch32BitInstruction for MemoryBus {
     const INSTRUCTION_SIZE: Size = Size::Word;
 
     fn fetch_and_decode(&self, pc: Self::PC) -> Result<Self::InstructionSet> {
-        if pc.wrapping_sub(self.entrypoint()) >= self.code_size() as u32 {
+        if pc.wrapping_sub(self.entrypoint()) >= self.code_size() {
             bail!("Program counter out of bounds: {:#010x}", pc);
         }
 

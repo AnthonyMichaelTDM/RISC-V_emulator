@@ -62,20 +62,20 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     (0b011_0011, 0b110, 0b000_0000) => RTypeOperation::Or,
                     (0b011_0011, 0b111, 0b000_0000) => RTypeOperation::And,
                     // M extension instructions
-                    (0b011_0011, 0b000, 0b0000001) => RTypeOperation::Mul,
-                    (0b011_0011, 0b001, 0b0000001) => RTypeOperation::Mulh,
-                    (0b011_0011, 0b010, 0b0000001) => RTypeOperation::Mulhsu,
-                    (0b011_0011, 0b011, 0b0000001) => RTypeOperation::Mulhu,
-                    (0b011_0011, 0b100, 0b0000001) => RTypeOperation::Div,
-                    (0b011_0011, 0b101, 0b0000001) => RTypeOperation::Divu,
-                    (0b011_0011, 0b110, 0b0000001) => RTypeOperation::Rem,
-                    (0b011_0011, 0b111, 0b0000001) => RTypeOperation::Remu,
+                    (0b011_0011, 0b000, 0b000_0001) => RTypeOperation::Mul,
+                    (0b011_0011, 0b001, 0b000_0001) => RTypeOperation::Mulh,
+                    (0b011_0011, 0b010, 0b000_0001) => RTypeOperation::Mulhsu,
+                    (0b011_0011, 0b011, 0b000_0001) => RTypeOperation::Mulhu,
+                    (0b011_0011, 0b100, 0b000_0001) => RTypeOperation::Div,
+                    (0b011_0011, 0b101, 0b000_0001) => RTypeOperation::Divu,
+                    (0b011_0011, 0b110, 0b000_0001) => RTypeOperation::Rem,
+                    (0b011_0011, 0b111, 0b000_0001) => RTypeOperation::Remu,
                     _ => bail!("Unknown R-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
                 Ok(Self::RType {
                     operation,
-                    rd :rd?,
+                    rd: rd?,
                     funct3,
                     rs1: rs1?,
                     rs2: rs2?,
@@ -87,7 +87,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 // convert to i32 so that our shift operations are sign extended, and we're explicity okay with the possible wrap
                 #[allow(clippy::cast_possible_wrap)]
                 let machine_code: i32 = machine_code as i32;
-                let mut imm: i32 = 
+                let mut imm: i32 =
                     /* extract the lowest 12 bits of the immediate from the machine code */
                     (machine_code >> 20) & 0xFFFF;
 
@@ -105,24 +105,24 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     (0b001_0011, 0b000, _) => ITypeOperation::Addi,
                     (0b001_0011, 0b111, _) => ITypeOperation::Andi,
                     (0b001_0011, 0b110, _) => ITypeOperation::Ori,
-                    (0b001_0011, 0b001, immediate ) if immediate >> 5 == 0b000_0000 => {
+                    (0b001_0011, 0b001, immediate) if immediate >> 5 == 0b000_0000 => {
                         // only the lower 5 bits are used, these are the shift amount,
                         // they are also always unsigned so this type of mask is safe
-                        imm = imm & 0b11111;
+                        imm &= 0b11111;
                         ITypeOperation::Slli
-                    },
-                    (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b000_0000 => {
+                    }
+                    (0b001_0011, 0b101, immediate) if immediate >> 5 == 0b000_0000 => {
                         // only the lower 5 bits are used, these are the shift amount,
                         // they are also always unsigned so this type of mask is safe
-                        imm = imm & 0b11111;
+                        imm &= 0b11111;
                         ITypeOperation::Srli
-                    },
-                    (0b001_0011, 0b101, immediate ) if immediate >>5 == 0b010_0000 => {
+                    }
+                    (0b001_0011, 0b101, immediate) if immediate >> 5 == 0b010_0000 => {
                         // only the lower 5 bits are used, these are the shift amount,
                         // they are also always unsigned so this type of mask is safe
-                        imm = imm & 0b11111;
+                        imm &= 0b11111;
                         ITypeOperation::Srai
-                    },
+                    }
                     (0b001_0011, 0b010, _) => ITypeOperation::Slti,
                     (0b001_0011, 0b011, _) => ITypeOperation::Sltiu,
                     (0b001_0011, 0b100, _) => ITypeOperation::Xori,
@@ -135,15 +135,18 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 };
 
                 // if the instruction is not one of the unsigned instructions, sign extend the immediate
-                if !matches!(operation, ITypeOperation::Lbu | ITypeOperation::Lhu | ITypeOperation::Sltiu) {
+                if !matches!(
+                    operation,
+                    ITypeOperation::Lbu | ITypeOperation::Lhu | ITypeOperation::Sltiu
+                ) {
                     imm = imm << 20 >> 20;
                 }
 
                 Ok(Self::IType {
                     operation,
-                    rd:rd?,
+                    rd: rd?,
                     funct3,
-                    rs1:rs1?,
+                    rs1: rs1?,
                     imm,
                 })
             }
@@ -155,8 +158,8 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 // only the lower 12 bits of the immediate are given, so we need to sign extend it to 32 bits
                 let imm: i32 =
                     /* extract the lowest 12 bits of the immediate from the machine code */
-                     (((machine_code >> 7) & 0b11111) | ((machine_code >> 20) & 0b1111_1110_0000)) 
-                    /* sign extend the immediate */ 
+                     (((machine_code >> 7) & 0b11111) | ((machine_code >> 20) & 0b1111_1110_0000))
+                    /* sign extend the immediate */
                     << 20 >> 20;
 
                 let operation = match funct3 {
@@ -169,8 +172,8 @@ impl Decode32BitInstruction for Rv32imInstruction {
 
                 Ok(Self::SType {
                     operation,
-                    rs1:rs1?,
-                    rs2:rs2?,
+                    rs1: rs1?,
+                    rs2: rs2?,
                     funct3,
                     imm,
                 })
@@ -180,7 +183,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 // convert to i32 so that our shift operations are sign extended, and we're explicity okay with the possible wrap
                 #[allow(clippy::cast_possible_wrap)]
                 let machine_code: i32 = machine_code as i32;
-                let imm: i32 = 
+                let imm: i32 =
                     /* extract the lowest 12 bits of the immediate from the machine code */
                     (machine_code >> 31) << 12// 12th bit
                     | ((machine_code << 4) & 0b1000_0000_0000)// 11th bit
@@ -201,8 +204,8 @@ impl Decode32BitInstruction for Rv32imInstruction {
 
                 Ok(Self::SBType {
                     operation,
-                    rs1:rs1?,
-                    rs2:rs2?,
+                    rs1: rs1?,
+                    rs2: rs2?,
                     funct3,
                     imm,
                 })
@@ -216,12 +219,14 @@ impl Decode32BitInstruction for Rv32imInstruction {
 
                 Ok(Self::UJType {
                     operation: UJTypeOperation::Jal,
-                    rd:rd?,
+                    rd: rd?,
                     imm,
                 })
             }
             // U-type instructions
             0b001_0111 | 0b011_0111 => {
+                #[allow(clippy::cast_possible_wrap)]
+                #[allow(clippy::cast_sign_loss)]
                 let imm: u32 = (((machine_code & 0xFFFF_F000) as i32) >> 12) as u32;
 
                 let operation = match opcode {
@@ -230,10 +235,17 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     _ => bail!("Unknown U-type instruction\n machine code: {machine_code:#010x}"),
                 };
 
-                Ok(Self::UType { operation, rd:rd?, imm })
+                Ok(Self::UType {
+                    operation,
+                    rd: rd?,
+                    imm,
+                })
             }
             // Unknown instruction
-            _ => bail!("Unknown OpCode: {:07b}\n machine code: {machine_code:#010x}", opcode),
+            _ => bail!(
+                "Unknown OpCode: {:07b}\n machine code: {machine_code:#010x}",
+                opcode
+            ),
         }
     }
 }
@@ -254,7 +266,7 @@ mod tests {
                 operation: RTypeOperation::Add,
                 rs1: RegisterMapping::Tp,
                 rs2: RegisterMapping::Gp,
-                rd:  RegisterMapping::T0,
+                rd: RegisterMapping::T0,
                 funct3: 0,
                 funct7: 0,
             }
@@ -270,7 +282,7 @@ mod tests {
             Rv32imInstruction::IType {
                 operation: ITypeOperation::Andi,
                 rs1: RegisterMapping::A2,
-                rd:  RegisterMapping::A3,
+                rd: RegisterMapping::A3,
                 funct3: 0b111,
                 imm: 0xA, // 10
             }
@@ -340,7 +352,7 @@ mod tests {
 
     #[test]
     fn test_auipc() -> Result<()> {
-        let machine_code:u32 = 0x0fc10497;
+        let machine_code: u32 = 0x0fc1_0497;
         let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
@@ -353,10 +365,9 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn test_lui() -> Result<()> {
-        let machine_code:u32 = 0x186a0337;
+        let machine_code: u32 = 0x186a_0337;
         let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
