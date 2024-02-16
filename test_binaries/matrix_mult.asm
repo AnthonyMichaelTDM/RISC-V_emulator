@@ -163,11 +163,11 @@ PL3:		bge	a3,s1,PL2
 		ecall
 		addi 	a1,a1,4
 		addi 	a3,a3,1
-		jal 	PL3
+		jal     x0, PL3
 
 PL2:		addi	a2,a2,1
 		la	a0,nline
 		li	a7,4
 		ecall
-		jal	PL4
+		jal	x0, PL4
 PL1:		jr	ra
