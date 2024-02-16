@@ -8,7 +8,11 @@ use crate::instruction_set_definition::{
     Ri32imInstruction,
 };
 
-use super::cpu::{memory::MemoryBus, registers::RegisterFile32Bit, Cpu32Bit};
+use super::cpu::{
+    memory::MemoryBus,
+    registers::{RegisterFile32Bit, RegisterMapping},
+    Cpu32Bit,
+};
 
 pub trait Execute32BitInstruction {
     type InstructionSet;
@@ -99,8 +103,8 @@ fn execute_itype_instruction(
     _registers: &mut RegisterFile32Bit, // needs mutable access to the registers
     _memory: &MemoryBus,                // needs immutable access to the memory
     _operation: ITypeOperation,
-    _rd: u8,
-    _rs1: u8,
+    _rd: RegisterMapping,
+    _rs1: RegisterMapping,
     _imm: i32,
 ) -> Result<()> {
     todo!()
@@ -109,9 +113,9 @@ fn execute_itype_instruction(
 fn execute_rtype_instruction(
     _registers: &mut RegisterFile32Bit,
     _operation: RTypeOperation,
-    _rd: u8,
-    _rs1: u8,
-    _rs2: u8,
+    _rd: RegisterMapping,
+    _rs1: RegisterMapping,
+    _rs2: RegisterMapping,
 ) -> Result<()> {
     todo!()
 }
@@ -120,8 +124,8 @@ fn execute_stype_instruction(
     _registers: &mut RegisterFile32Bit,
     _memory: &MemoryBus,
     _operation: STypeOperation,
-    _rs1: u8,
-    _rs2: u8,
+    _rs1: RegisterMapping,
+    _rs2: RegisterMapping,
     _imm: i32,
 ) -> Result<()> {
     todo!()
@@ -131,8 +135,8 @@ fn execute_sbtype_instruction(
     _registers: &mut RegisterFile32Bit,
     _memory: &MemoryBus,
     _operation: SBTypeOperation,
-    _rs1: u8,
-    _rs2: u8,
+    _rs1: RegisterMapping,
+    _rs2: RegisterMapping,
     _imm: i32,
 ) -> Result<()> {
     todo!()
@@ -141,7 +145,7 @@ fn execute_sbtype_instruction(
 fn execute_ujtype_instruction(
     _registers: &mut RegisterFile32Bit,
     _operation: UJTypeOperation,
-    _rd: u8,
+    _rd: RegisterMapping,
     _imm: u32,
 ) -> Result<()> {
     todo!()
@@ -150,7 +154,7 @@ fn execute_ujtype_instruction(
 fn execute_utype_instruction(
     _registers: &mut RegisterFile32Bit,
     _operation: UTypeOperation,
-    _rd: u8,
+    _rd: RegisterMapping,
     _imm: u32,
 ) -> Result<()> {
     todo!()

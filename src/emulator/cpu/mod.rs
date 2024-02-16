@@ -144,7 +144,6 @@ impl fmt::Display for Cpu32Bit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "CPU32Bit {{\n")?;
         write!(f, "    pc: {:#010x},\n", self.pc)?;
-
         write!(f, "    context: {{\n")?;
         // print the 4 instructions before the current instruction
         for offset in (1..=4).rev() {

@@ -9,6 +9,8 @@ use crate::instruction_set_definition::{
     Ri32imInstruction,
 };
 
+use super::cpu::registers::RegisterMapping;
+
 #[allow(clippy::module_name_repetitions)]
 pub trait Decode32BitInstruction {
     /// Decode a 32-bit machine code into an instruction
@@ -34,9 +36,10 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
         // fields that are common to most instructions
         // (or at least are extracted the same way in all instructions the fields are present in)
-        let rd: u8 = ((machine_code >> 7) & 0b11111) as u8;
-        let rs1: u8 = ((machine_code >> 15) & 0b11111) as u8;
-        let rs2: u8 = ((machine_code >> 20) & 0b11111) as u8;
+        // we defer propogating any errors in reading the register mappings until we know the instruction uses them
+        let rd = RegisterMapping::try_from(((machine_code >> 7) & 0b11111) as u8);
+        let rs1 = RegisterMapping::try_from(((machine_code >> 15) & 0b11111) as u8);
+        let rs2 = RegisterMapping::try_from(((machine_code >> 20) & 0b11111) as u8);
         let funct3: u8 = ((machine_code >> 12) & 0b111) as u8;
 
         match opcode {
@@ -72,10 +75,10 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
                 Ok(Self::RType {
                     operation,
-                    rd,
+                    rd :rd?,
                     funct3,
-                    rs1,
-                    rs2,
+                    rs1: rs1?,
+                    rs2: rs2?,
                     funct7,
                 })
             }
@@ -138,9 +141,9 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
                 Ok(Self::IType {
                     operation,
-                    rd,
+                    rd:rd?,
                     funct3,
-                    rs1,
+                    rs1:rs1?,
                     imm,
                 })
             }
@@ -167,8 +170,8 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
                 Ok(Self::SType {
                     operation,
-                    rs1,
-                    rs2,
+                    rs1:rs1?,
+                    rs2:rs2?,
                     funct3,
                     imm,
                 })
@@ -199,8 +202,8 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
                 Ok(Self::SBType {
                     operation,
-                    rs1,
-                    rs2,
+                    rs1:rs1?,
+                    rs2:rs2?,
                     funct3,
                     imm,
                 })
@@ -214,7 +217,7 @@ impl Decode32BitInstruction for Ri32imInstruction {
 
                 Ok(Self::UJType {
                     operation: UJTypeOperation::Jal,
-                    rd,
+                    rd:rd?,
                     imm,
                 })
             }
@@ -228,7 +231,7 @@ impl Decode32BitInstruction for Ri32imInstruction {
                     _ => bail!("Unknown U-type instruction"),
                 };
 
-                Ok(Self::UType { operation, rd, imm })
+                Ok(Self::UType { operation, rd:rd?, imm })
             }
             // Unknown instruction
             _ => bail!("Unknown OpCode: {:07b}", opcode),
@@ -250,9 +253,9 @@ mod tests {
             instruction,
             Ri32imInstruction::RType {
                 operation: RTypeOperation::Add,
-                rs1: 4,
-                rs2: 3,
-                rd: 5,
+                rs1: RegisterMapping::Tp,
+                rs2: RegisterMapping::Gp,
+                rd:  RegisterMapping::T0,
                 funct3: 0,
                 funct7: 0,
             }
@@ -267,8 +270,8 @@ mod tests {
             instruction,
             Ri32imInstruction::IType {
                 operation: ITypeOperation::Andi,
-                rs1: 12,
-                rd: 13,
+                rs1: RegisterMapping::A2,
+                rd:  RegisterMapping::A3,
                 funct3: 0b111,
                 imm: 0xA, // 10
             }
@@ -283,8 +286,8 @@ mod tests {
             instruction,
             Ri32imInstruction::SType {
                 operation: STypeOperation::Sb,
-                rs1: 4,
-                rs2: 3,
+                rs1: RegisterMapping::Tp,
+                rs2: RegisterMapping::Gp,
                 funct3: 0b000,
                 imm: -16,
             }
@@ -299,8 +302,8 @@ mod tests {
             instruction,
             Ri32imInstruction::SBType {
                 operation: SBTypeOperation::Bne,
-                rs1: 5,
-                rs2: 30,
+                rs1: RegisterMapping::T0,
+                rs2: RegisterMapping::T5,
                 funct3: 0b001,
                 imm: 6,
             }
@@ -315,7 +318,7 @@ mod tests {
             instruction,
             Ri32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
-                rd: 1,
+                rd: RegisterMapping::Ra,
                 imm: 0xA, // 10
             }
         );
@@ -329,7 +332,7 @@ mod tests {
             instruction,
             Ri32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
-                rd: 1,
+                rd: RegisterMapping::Ra,
                 imm: 0b1_0000_1000_1000_0000_1010,
             }
         );
@@ -344,7 +347,7 @@ mod tests {
             instruction,
             Ri32imInstruction::UType {
                 operation: UTypeOperation::Auipc,
-                rd: 9,
+                rd: RegisterMapping::S1,
                 imm: 0xfc10,
             }
         );
@@ -360,7 +363,7 @@ mod tests {
             instruction,
             Ri32imInstruction::UType {
                 operation: UTypeOperation::Lui,
-                rd: 6,
+                rd: RegisterMapping::T1,
                 imm: 0x186a0,
             }
         );

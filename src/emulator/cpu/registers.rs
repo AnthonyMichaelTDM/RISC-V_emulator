@@ -44,6 +44,12 @@ pub enum RegisterMapping {
     T6 = 31,
 }
 
+impl fmt::Display for RegisterMapping {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "x{:02}", *self as u8)
+    }
+}
+
 impl TryFrom<u8> for RegisterMapping {
     type Error = anyhow::Error;
     fn try_from(value: u8) -> Result<Self, anyhow::Error> {
