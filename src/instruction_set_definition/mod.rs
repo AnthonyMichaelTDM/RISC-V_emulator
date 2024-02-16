@@ -10,7 +10,7 @@ use crate::emulator::cpu::registers::RegisterMapping;
 pub mod operations;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Display)]
-pub enum Ri32imInstruction {
+pub enum Rv32imInstruction {
     #[display(
         fmt = "{:10} {rd}, {rs1}, {rs2}        # R-Type:  operation, rd, rs1, rs2",
         "operation.to_string()"

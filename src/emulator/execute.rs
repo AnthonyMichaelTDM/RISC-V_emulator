@@ -1,11 +1,11 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::instruction_set_definition::{
     operations::{
         ITypeOperation, RTypeOperation, SBTypeOperation, STypeOperation, UJTypeOperation,
         UTypeOperation,
     },
-    Ri32imInstruction,
+    Rv32imInstruction,
 };
 
 use super::cpu::{
@@ -32,7 +32,7 @@ pub trait Execute32BitInstruction {
 }
 
 impl Execute32BitInstruction for Cpu32Bit {
-    type InstructionSet = Ri32imInstruction;
+    type InstructionSet = Rv32imInstruction;
 
     fn execute(&mut self, instruction: Self::InstructionSet) -> Result<()> {
         match instruction {
@@ -46,8 +46,9 @@ impl Execute32BitInstruction for Cpu32Bit {
                 execute_itype_instruction(
                     &mut self.debug,
                     &mut self.pc,
+                    &mut self.output,
                     &mut self.registers,
-                    &self.memory,
+                    &mut self.memory,
                     operation,
                     rd,
                     rs1,
@@ -117,8 +118,9 @@ impl Execute32BitInstruction for Cpu32Bit {
 fn execute_itype_instruction(
     debug: &mut bool,
     pc: &mut u32,
+    output: &mut String,
     regs: &mut RegisterFile32Bit, // needs mutable access to the registers
-    memory: &MemoryBus,           // needs immutable access to the memory
+    memory: &mut MemoryBus, // needs immutable access to the memory, except for the ReadString syscall which needs mutable access
     operation: ITypeOperation,
     rd: RegisterMapping,
     rs1: RegisterMapping,
@@ -158,14 +160,10 @@ fn execute_itype_instruction(
         }
         ITypeOperation::Fence => unimplemented!("fence instruction not implemented"),
         ITypeOperation::FenceI => unimplemented!("fence.i instruction not implemented"),
-        ITypeOperation::Ecall => process_ecall(regs, memory)?,
+        ITypeOperation::Ecall => process_ecall(regs, memory, output)?,
         ITypeOperation::Ebreak => *debug = true,
     }
     Ok(())
-}
-
-fn process_ecall(_registers: &mut RegisterFile32Bit, _memory: &MemoryBus) -> Result<()> {
-    todo!() // Ok(())
 }
 
 fn execute_rtype_instruction(

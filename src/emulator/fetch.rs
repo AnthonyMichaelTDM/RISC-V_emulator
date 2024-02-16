@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-use crate::instruction_set_definition::Ri32imInstruction;
+use crate::instruction_set_definition::Rv32imInstruction;
 
 use super::{
     cpu::{
@@ -32,7 +32,7 @@ pub trait Fetch32BitInstruction {
 }
 
 impl Fetch32BitInstruction for MemoryBus {
-    type InstructionSet = Ri32imInstruction;
+    type InstructionSet = Rv32imInstruction;
     type PC = u32;
     const INSTRUCTION_SIZE: Size = Size::Word;
 
@@ -44,6 +44,6 @@ impl Fetch32BitInstruction for MemoryBus {
         // read the instruction from memory
         let instruction = self.read(pc, Self::INSTRUCTION_SIZE)?;
         // decode the instruction
-        Ri32imInstruction::from_machine_code(instruction)
+        Rv32imInstruction::from_machine_code(instruction)
     }
 }

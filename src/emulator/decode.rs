@@ -6,7 +6,7 @@ use crate::instruction_set_definition::{
         ITypeOperation, RTypeOperation, SBTypeOperation, STypeOperation, UJTypeOperation,
         UTypeOperation,
     },
-    Ri32imInstruction,
+    Rv32imInstruction,
 };
 
 use super::cpu::registers::RegisterMapping;
@@ -28,7 +28,7 @@ pub trait Decode32BitInstruction {
         Self: Sized;
 }
 
-impl Decode32BitInstruction for Ri32imInstruction {
+impl Decode32BitInstruction for Rv32imInstruction {
     #[allow(clippy::too_many_lines)]
     fn from_machine_code(machine_code: u32) -> Result<Self> {
         // extract the opcode
@@ -222,7 +222,7 @@ impl Decode32BitInstruction for Ri32imInstruction {
             }
             // U-type instructions
             0b001_0111 | 0b011_0111 => {
-                let imm: u32 = (machine_code & 0xFFFF_F000) >> 12;
+                let imm: u32 = (((machine_code & 0xFFFF_F000) as i32) >> 12) as u32;
 
                 let operation = match opcode {
                     0b011_0111 => UTypeOperation::Lui,
@@ -247,10 +247,10 @@ mod tests {
     #[test]
     fn test_add() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_0011_0010_0000_0010_1011_0011;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::RType {
+            Rv32imInstruction::RType {
                 operation: RTypeOperation::Add,
                 rs1: RegisterMapping::Tp,
                 rs2: RegisterMapping::Gp,
@@ -264,10 +264,10 @@ mod tests {
     #[test]
     fn test_andi() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_1010_0110_0111_0110_1001_0011;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::IType {
+            Rv32imInstruction::IType {
                 operation: ITypeOperation::Andi,
                 rs1: RegisterMapping::A2,
                 rd:  RegisterMapping::A3,
@@ -280,10 +280,10 @@ mod tests {
     #[test]
     fn test_sb() -> Result<()> {
         let machine_code: u32 = 0b1111_1110_0011_0010_0000_1000_0010_0011;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::SType {
+            Rv32imInstruction::SType {
                 operation: STypeOperation::Sb,
                 rs1: RegisterMapping::Tp,
                 rs2: RegisterMapping::Gp,
@@ -296,10 +296,10 @@ mod tests {
     #[test]
     fn test_bne() -> Result<()> {
         let machine_code: u32 = 0b0000_0001_1110_0010_1001_0011_0110_0011;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::SBType {
+            Rv32imInstruction::SBType {
                 operation: SBTypeOperation::Bne,
                 rs1: RegisterMapping::T0,
                 rs2: RegisterMapping::T5,
@@ -312,10 +312,10 @@ mod tests {
     #[test]
     fn test_jal() -> Result<()> {
         let machine_code: u32 = 0b0000_0000_1010_0000_0000_0000_1110_1111;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::UJType {
+            Rv32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
                 rd: RegisterMapping::Ra,
                 imm: 0xA, // 10
@@ -326,10 +326,10 @@ mod tests {
     #[test]
     fn test_jal_2() -> Result<()> {
         let machine_code: u32 = 0b1000_0000_1011_0000_1000_0000_1110_1111;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::UJType {
+            Rv32imInstruction::UJType {
                 operation: UJTypeOperation::Jal,
                 rd: RegisterMapping::Ra,
                 imm: 0b1_0000_1000_1000_0000_1010,
@@ -341,10 +341,10 @@ mod tests {
     #[test]
     fn test_auipc() -> Result<()> {
         let machine_code:u32 = 0x0fc10497;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::UType {
+            Rv32imInstruction::UType {
                 operation: UTypeOperation::Auipc,
                 rd: RegisterMapping::S1,
                 imm: 0xfc10,
@@ -357,10 +357,10 @@ mod tests {
     #[test]
     fn test_lui() -> Result<()> {
         let machine_code:u32 = 0x186a0337;
-        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
         assert_eq!(
             instruction,
-            Ri32imInstruction::UType {
+            Rv32imInstruction::UType {
                 operation: UTypeOperation::Lui,
                 rd: RegisterMapping::T1,
                 imm: 0x186a0,

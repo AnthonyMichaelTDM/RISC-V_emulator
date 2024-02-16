@@ -9,8 +9,6 @@ use debugger::DebuggerCommand;
 use memory::MemoryBus;
 use registers::{RegisterFile32Bit, RegisterMapping};
 
-use crate::instruction_set_definition::{operations::ITypeOperation, Ri32imInstruction};
-
 use self::memory::TEXT_BASE;
 
 use super::{execute::Execute32BitInstruction as _, fetch::Fetch32BitInstruction as _};
@@ -34,6 +32,8 @@ pub struct Cpu32Bit {
     pub memory: MemoryBus,
     /// Whether the CPU should pause before executing the next instruction.
     pub debug: bool,
+    /// The programs stdout
+    pub output: String,
 }
 
 impl Default for Cpu32Bit {
@@ -51,6 +51,7 @@ impl Cpu32Bit {
             pc: 0,
             memory: MemoryBus::new(),
             debug: false,
+            output: String::new(),
         }
     }
 
@@ -94,17 +95,6 @@ impl Cpu32Bit {
         // fetch and decode the instruction
         let instruction = self.memory.fetch_and_decode(self.pc)?;
 
-        // if the instruction is an ebreak,
-        // enter debugger mode
-        if let Ri32imInstruction::IType {
-            operation: ITypeOperation::Ebreak,
-            ..
-        } = instruction
-        {
-            // pause execution and wait for user input
-            self.debug = true;
-        }
-
         if self.debug {
             debugger::clear_screen();
             debugger::print_screen(self);
@@ -136,7 +126,10 @@ impl Cpu32Bit {
         }
 
         // execute the instruction, updating the CPU's state as necessary (e.g. updating registers and memory, incrementing the program counter, etc.)
-        self.execute(instruction)
+        self.execute(instruction)?;
+        println!("\n Program Output: {}", self.output);
+
+        Ok(())
     }
 }
 
