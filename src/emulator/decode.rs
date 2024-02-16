@@ -213,11 +213,11 @@ impl Decode32BitInstruction for Ri32imInstruction {
             }
             // U-type instructions
             0b001_0111 | 0b011_0111 => {
-                let imm: u32 = machine_code & 0xFFFF_F000;
+                let imm: u32 = (machine_code & 0xFFFF_F000) >> 12;
 
                 let operation = match opcode {
-                    0b001_0111 => UTypeOperation::Lui,
-                    0b011_0111 => UTypeOperation::Auipc,
+                    0b011_0111 => UTypeOperation::Lui,
+                    0b001_0111 => UTypeOperation::Auipc,
                     _ => bail!("Unknown U-type instruction"),
                 };
 
@@ -324,6 +324,37 @@ mod tests {
                 operation: UJTypeOperation::Jal,
                 rd: 1,
                 imm: 0b1_0000_1000_1000_0000_1010,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_auipc() -> Result<()> {
+        let machine_code:u32 = 0x0fc10497;
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Ri32imInstruction::UType {
+                operation: UTypeOperation::Auipc,
+                rd: 9,
+                imm: 0xfc10,
+            }
+        );
+        Ok(())
+    }
+
+
+    #[test]
+    fn test_lui() -> Result<()> {
+        let machine_code:u32 = 0x186a0337;
+        let instruction = Ri32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Ri32imInstruction::UType {
+                operation: UTypeOperation::Lui,
+                rd: 6,
+                imm: 0x186a0,
             }
         );
         Ok(())

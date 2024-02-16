@@ -1,9 +1,12 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::instruction_set_definition::Ri32imInstruction;
 
 use super::{
-    cpu::{Cpu32Bit, Size},
+    cpu::{
+        memory::{MemoryBus, TEXT_BASE},
+        Size,
+    },
     decode::Decode32BitInstruction,
 };
 
@@ -25,17 +28,21 @@ pub trait Fetch32BitInstruction {
     ///
     /// Returns an error if the instruction cannot be fetched from the memory.
     /// this can happen if the memory is out of bounds, if the memory is not readable, if the memory is outside of the text segment, etc.
-    fn fetch(&self, pc: Self::PC) -> Result<Self::InstructionSet>;
+    fn fetch_and_decode(&self, pc: Self::PC) -> Result<Self::InstructionSet>;
 }
 
-impl Fetch32BitInstruction for Cpu32Bit {
+impl Fetch32BitInstruction for MemoryBus {
     type InstructionSet = Ri32imInstruction;
     type PC = u32;
     const INSTRUCTION_SIZE: Size = Size::Word;
 
-    fn fetch(&self, pc: Self::PC) -> Result<Self::InstructionSet> {
+    fn fetch_and_decode(&self, pc: Self::PC) -> Result<Self::InstructionSet> {
+        if pc.wrapping_sub(TEXT_BASE) >= self.code_size_bytes() as u32 {
+            bail!("Program counter out of bounds: {:#010x}", pc);
+        }
+
         // read the instruction from memory
-        let instruction = self.memory.read(pc, Self::INSTRUCTION_SIZE)?;
+        let instruction = self.read(pc, Self::INSTRUCTION_SIZE)?;
         // decode the instruction
         Ri32imInstruction::from_machine_code(instruction)
     }

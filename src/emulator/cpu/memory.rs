@@ -161,6 +161,11 @@ impl MemoryBus {
         self.text.initialize(data);
     }
 
+    /// get the size of the text segment in bytes
+    pub fn code_size_bytes(&self) -> usize {
+        self.code_size_bytes
+    }
+
     /// Load a `size`-bit data from the device that connects to the system bus.
     ///
     /// This method is used to read from the memory.
