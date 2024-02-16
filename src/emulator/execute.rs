@@ -75,8 +75,8 @@ impl Execute32BitInstruction for Cpu32Bit {
                 rs2,
                 imm,
             } => execute_stype_instruction(
-                &mut self.registers,
-                &self.memory,
+                &self.registers,
+                &mut self.memory,
                 operation,
                 rs1,
                 rs2,
@@ -89,8 +89,8 @@ impl Execute32BitInstruction for Cpu32Bit {
                 rs2,
                 imm,
             } => execute_sbtype_instruction(
+                &mut self.pc,
                 &mut self.registers,
-                &self.memory,
                 operation,
                 rs1,
                 rs2,
@@ -226,25 +226,67 @@ fn execute_rtype_instruction(
 }
 
 fn execute_stype_instruction(
-    _registers: &mut RegisterFile32Bit,
-    _memory: &MemoryBus,
-    _operation: STypeOperation,
-    _rs1: RegisterMapping,
-    _rs2: RegisterMapping,
-    _imm: i32,
+    regs: &RegisterFile32Bit,
+    memory: &mut MemoryBus,
+    operation: STypeOperation,
+    rs1: RegisterMapping,
+    rs2: RegisterMapping,
+    offset: i32,
 ) -> Result<()> {
-    todo!()
+    match operation {
+        STypeOperation::Sb => {
+            memory.write(regs[rs1].wrapping_add_signed(offset), regs[rs2], Size::Byte)
+        }
+        STypeOperation::Sh => {
+            memory.write(regs[rs1].wrapping_add_signed(offset), regs[rs2], Size::Half)
+        }
+        STypeOperation::Sw => {
+            memory.write(regs[rs1].wrapping_add_signed(offset), regs[rs2], Size::Word)
+        }
+    }
 }
 
 fn execute_sbtype_instruction(
-    _registers: &mut RegisterFile32Bit,
-    _memory: &MemoryBus,
-    _operation: SBTypeOperation,
-    _rs1: RegisterMapping,
-    _rs2: RegisterMapping,
-    _imm: i32,
+    pc: &mut u32,
+    regs: &mut RegisterFile32Bit,
+    operation: SBTypeOperation,
+    rs1: RegisterMapping,
+    rs2: RegisterMapping,
+    offset: i32,
 ) -> Result<()> {
-    todo!()
+    match operation {
+        SBTypeOperation::Beq => {
+            if regs[rs1] == regs[rs2] {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+        SBTypeOperation::Bge => {
+            if (regs[rs1] as i32) >= (regs[rs2] as i32) {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+        SBTypeOperation::Blt => {
+            if (regs[rs1] as i32) < (regs[rs2] as i32) {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+        SBTypeOperation::Bne => {
+            if regs[rs1] != regs[rs2] {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+        SBTypeOperation::Bltu => {
+            if regs[rs1] < regs[rs2] {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+        SBTypeOperation::Bgeu => {
+            if regs[rs1] >= regs[rs2] {
+                *pc = pc.wrapping_add_signed(offset);
+            }
+        }
+    }
+    Ok(())
 }
 
 fn execute_ujtype_instruction(
