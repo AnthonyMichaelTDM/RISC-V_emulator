@@ -90,7 +90,7 @@ impl Execute32BitInstruction for Cpu32Bit {
                 execute_ujtype_instruction(&mut self.registers, operation, rd, imm)
             }
             Self::InstructionSet::UType { operation, rd, imm } => {
-                execute_utype_instruction(&mut self.registers, operation, rd, imm)
+                execute_utype_instruction(&self.pc, &mut self.registers, operation, rd, imm)
             }
         }?;
         self.pc += 4;
@@ -198,10 +198,15 @@ fn execute_ujtype_instruction(
 }
 
 fn execute_utype_instruction(
-    _registers: &mut RegisterFile32Bit,
-    _operation: UTypeOperation,
-    _rd: RegisterMapping,
-    _imm: u32,
+    pc: &u32,
+    registers: &mut RegisterFile32Bit,
+    operation: UTypeOperation,
+    rd: RegisterMapping,
+    imm: u32,
 ) -> Result<()> {
-    todo!()
+    match operation {
+        UTypeOperation::Lui => registers[rd] = imm << 12,
+        UTypeOperation::Auipc => registers[rd] = pc + (imm << 12),
+    }
+    Ok(())
 }
