@@ -89,7 +89,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 let machine_code: i32 = machine_code as i32;
                 let mut imm: i32 =
                     /* extract the lowest 12 bits of the immediate from the machine code */
-                    (machine_code >> 20) & 0xFFFF;
+                    (machine_code >> 20) & 0xFFF;
 
                 let operation = match (opcode, funct3, imm) {
                     // memory load instructions
