@@ -135,10 +135,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 };
 
                 // if the instruction is not one of the unsigned instructions, sign extend the immediate
-                if !matches!(
-                    operation,
-                    ITypeOperation::Lbu | ITypeOperation::Lhu | ITypeOperation::Sltiu
-                ) {
+                if !matches!(operation, ITypeOperation::Sltiu) {
                     imm = imm << 20 >> 20;
                 }
 
@@ -375,6 +372,74 @@ mod tests {
                 operation: UTypeOperation::Lui,
                 rd: RegisterMapping::T1,
                 imm: 0x186a0,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_lbu_negative_offset() -> Result<()> {
+        let machine_code: u32 = 0xff434483;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Rv32imInstruction::IType {
+                operation: ITypeOperation::Lbu,
+                rs1: RegisterMapping::T1,
+                rd: RegisterMapping::S1,
+                funct3: 0b100,
+                imm: -12,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_lbu_positive_offset() -> Result<()> {
+        let machine_code: u32 = 0x00c34483;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Rv32imInstruction::IType {
+                operation: ITypeOperation::Lbu,
+                rs1: RegisterMapping::T1,
+                rd: RegisterMapping::S1,
+                funct3: 0b100,
+                imm: 12,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_lhu_negative_offset() -> Result<()> {
+        let machine_code: u32 = 0xff435483;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Rv32imInstruction::IType {
+                operation: ITypeOperation::Lhu,
+                rs1: RegisterMapping::T1,
+                rd: RegisterMapping::S1,
+                funct3: 0b101,
+                imm: -12,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_lhu_positive_offset() -> Result<()> {
+        let machine_code: u32 = 0x00c35483;
+        let instruction = Rv32imInstruction::from_machine_code(machine_code)?;
+        assert_eq!(
+            instruction,
+            Rv32imInstruction::IType {
+                operation: ITypeOperation::Lhu,
+                rs1: RegisterMapping::T1,
+                rd: RegisterMapping::S1,
+                funct3: 0b101,
+                imm: 12,
             }
         );
         Ok(())
