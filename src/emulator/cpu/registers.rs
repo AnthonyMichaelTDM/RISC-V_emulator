@@ -105,7 +105,10 @@ impl Index<RegisterMapping> for RegisterFile32Bit {
 
 impl IndexMut<RegisterMapping> for RegisterFile32Bit {
     fn index_mut(&mut self, index: RegisterMapping) -> &mut Self::Output {
-        assert!(index != RegisterMapping::Zero, "Cannot write to the zero register");
+        assert!(
+            index != RegisterMapping::Zero,
+            "Cannot write to the zero register"
+        );
         &mut self.registers[index as usize]
     }
 }
@@ -123,7 +126,7 @@ impl RegisterFile32Bit {
         self.registers[reg as usize]
     }
 
-    pub fn write(&mut self, reg: RegisterMapping, value: u32) {
+    pub const fn write(&mut self, reg: RegisterMapping, value: u32) {
         self.registers[reg as usize] = value;
     }
 }

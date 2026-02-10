@@ -35,7 +35,9 @@ pub const TEXT_SIZE: u32 = 0x0040_0000;
 
 /// the data portion of the memory starts at `0x1000_0000` with static data (.data section)
 /// and grows upwards to `0x1000_0000` + 4MB
+///
 /// the end of the data portion which is at `0x7FFF_FFFF`, and it is the start of the stack, wich grows downwards
+///
 /// the heap starts at the end of the data section and grows upwards
 pub const STATIC_DATA_SIZE: u32 = 0x0040_0000;
 pub const STACK_CEILING: u32 = 0x7FFF_EFFC;

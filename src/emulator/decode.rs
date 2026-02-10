@@ -100,10 +100,10 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 Ok(Self::RType {
                     operation,
                     rd: rd?,
-                    funct3,
+                    _funct3: funct3,
                     rs1: rs1?,
                     rs2: rs2?,
-                    funct7,
+                    _funct7: funct7,
                 })
             }
             // I-type instructions
@@ -166,7 +166,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                 Ok(Self::IType {
                     operation,
                     rd: rd?,
-                    funct3,
+                    _funct3: funct3,
                     rs1: rs1?,
                     imm,
                 })
@@ -195,7 +195,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     operation,
                     rs1: rs1?,
                     rs2: rs2?,
-                    funct3,
+                    _funct3: funct3,
                     imm,
                 })
             }
@@ -227,7 +227,7 @@ impl Decode32BitInstruction for Rv32imInstruction {
                     operation,
                     rs1: rs1?,
                     rs2: rs2?,
-                    funct3,
+                    _funct3: funct3,
                     imm,
                 })
             }
@@ -288,8 +288,8 @@ mod tests {
                 rs1: RegisterMapping::Tp,
                 rs2: RegisterMapping::Gp,
                 rd: RegisterMapping::T0,
-                funct3: 0,
-                funct7: 0,
+                _funct3: 0,
+                _funct7: 0,
             }
         );
         Ok(())
@@ -304,7 +304,7 @@ mod tests {
                 operation: ITypeOperation::Andi,
                 rs1: RegisterMapping::A2,
                 rd: RegisterMapping::A3,
-                funct3: 0b111,
+                _funct3: 0b111,
                 imm: 0xA, // 10
             }
         );
@@ -320,7 +320,7 @@ mod tests {
                 operation: STypeOperation::Sb,
                 rs1: RegisterMapping::Tp,
                 rs2: RegisterMapping::Gp,
-                funct3: 0b000,
+                _funct3: 0b000,
                 imm: -16,
             }
         );
@@ -336,7 +336,7 @@ mod tests {
                 operation: SBTypeOperation::Bne,
                 rs1: RegisterMapping::T0,
                 rs2: RegisterMapping::T5,
-                funct3: 0b001,
+                _funct3: 0b001,
                 imm: 6,
             }
         );
@@ -411,7 +411,7 @@ mod tests {
                 operation: ITypeOperation::Lbu,
                 rs1: RegisterMapping::T1,
                 rd: RegisterMapping::S1,
-                funct3: 0b100,
+                _funct3: 0b100,
                 imm: -12,
             }
         );
@@ -428,7 +428,7 @@ mod tests {
                 operation: ITypeOperation::Lbu,
                 rs1: RegisterMapping::T1,
                 rd: RegisterMapping::S1,
-                funct3: 0b100,
+                _funct3: 0b100,
                 imm: 12,
             }
         );
@@ -445,7 +445,7 @@ mod tests {
                 operation: ITypeOperation::Lhu,
                 rs1: RegisterMapping::T1,
                 rd: RegisterMapping::S1,
-                funct3: 0b101,
+                _funct3: 0b101,
                 imm: -12,
             }
         );
@@ -462,7 +462,7 @@ mod tests {
                 operation: ITypeOperation::Lhu,
                 rs1: RegisterMapping::T1,
                 rd: RegisterMapping::S1,
-                funct3: 0b101,
+                _funct3: 0b101,
                 imm: 12,
             }
         );

@@ -42,10 +42,10 @@ pub enum Rv32imInstruction {
     RType {
         operation: RTypeOperation,
         rd: RegisterMapping,
-        funct3: u8,
+        _funct3: u8,
         rs1: RegisterMapping,
         rs2: RegisterMapping,
-        funct7: u8,
+        _funct7: u8,
     },
     #[display(
         fmt = "{:10} {rd}, {rs1}, {imm:#010x} # I-Type:  operation, rd,  rs1, imm",
@@ -54,7 +54,7 @@ pub enum Rv32imInstruction {
     IType {
         operation: ITypeOperation,
         rd: RegisterMapping,
-        funct3: u8,
+        _funct3: u8,
         rs1: RegisterMapping,
         imm: i32,
     },
@@ -64,7 +64,7 @@ pub enum Rv32imInstruction {
     )]
     SType {
         operation: STypeOperation,
-        funct3: u8,
+        _funct3: u8,
         rs1: RegisterMapping,
         rs2: RegisterMapping,
         imm: i32,
@@ -75,7 +75,7 @@ pub enum Rv32imInstruction {
     )]
     SBType {
         operation: SBTypeOperation,
-        funct3: u8,
+        _funct3: u8,
         rs1: RegisterMapping,
         rs2: RegisterMapping,
         imm: i32,

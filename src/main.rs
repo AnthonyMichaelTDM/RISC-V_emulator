@@ -22,15 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#![deny(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::perf,
+    rust_2018_idioms
+)]
+#![allow(clippy::cast_lossless, clippy::new_without_default)]
+
 pub mod emulator;
 pub mod instruction_set_definition;
 pub mod utils;
 
-#[allow(unused_imports)]
-use std::{path::PathBuf, str::FromStr as _};
+use std::path::PathBuf;
 
 use anyhow::{bail, Result};
-use clap::{command, Parser};
+use clap::Parser;
 use elf::{endian::AnyEndian, ElfBytes};
 use emulator::cpu::Cpu32Bit;
 

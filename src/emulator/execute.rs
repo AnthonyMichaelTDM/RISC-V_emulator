@@ -68,7 +68,7 @@ impl Execute32BitInstruction for Cpu32Bit {
             Self::InstructionSet::IType {
                 operation,
                 rd,
-                funct3: _,
+                _funct3: _,
                 rs1,
                 imm,
             } => {
@@ -92,14 +92,14 @@ impl Execute32BitInstruction for Cpu32Bit {
             Self::InstructionSet::RType {
                 operation,
                 rd,
-                funct3: _,
+                _funct3: _,
                 rs1,
                 rs2,
-                funct7: _,
+                _funct7: _,
             } => execute_rtype_instruction(&mut self.registers, operation, rd, rs1, rs2)?,
             Self::InstructionSet::SType {
                 operation,
-                funct3: _,
+                _funct3: _,
                 rs1,
                 rs2,
                 imm,
@@ -113,7 +113,7 @@ impl Execute32BitInstruction for Cpu32Bit {
             )?,
             Self::InstructionSet::SBType {
                 operation,
-                funct3: _,
+                _funct3: _,
                 rs1,
                 rs2,
                 imm,
