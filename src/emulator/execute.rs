@@ -187,8 +187,10 @@ fn execute_itype_instruction(
         ITypeOperation::Lhu => {
             regs[rd] = memory.read(regs[rs1].wrapping_add_signed(imm), Size::Half)?;
         }
-        ITypeOperation::Fence => unimplemented!("fence instruction not implemented"),
-        ITypeOperation::FenceI => unimplemented!("fence.i instruction not implemented"),
+        ITypeOperation::Fence | ITypeOperation::FenceI => {
+            // This is a single-threaded emulator, with no out-of order execution, so we can safely ignore the fence instructions.
+            // Additionally, since there is no instruction cache either, the fence.i instruction is also a no-op.
+        }
         ITypeOperation::Ecall => process_ecall(regs, memory, output)?,
         ITypeOperation::Ebreak => *debug = true,
     }
